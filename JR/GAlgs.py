@@ -1,19 +1,20 @@
 # Genetic Algorithms. Two modules: PyGAD and DEAP
 from deap import base, creator, tools
 from tqdm import tqdm; import numpy as np
+from playsound import playsound
 
-# DEAP Algorithm. When using parallelization, one will have to open a pool using 'with' or if __name__ = main... pass the pool and close the pool when the algorithm is finished.
-def initiate_DEAP(fitness_func, parallel, generange = (0,1), indsize = 18, mutprob = 0.05, tmntsize = 3, pool = None):
+# DEAP Algorithm.
+def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob = 0.05, tmntsize = 3):
     '''
     Registers the different classes and methods required to run the DEAP genetic algorithm. Basic characteristics of the problem need to be passed:
 
     fitness_func:   The name of the fitness function 
-    parallel:       Boolean indicating if we want to evaluate fitness functions on individuals in a parallel manner 
     generange:      The (min,max) values of the individuals' genes.
     indsize:        The individual size. The amount of genes per individual.
     mutprob:        The probability of mutation of a certain gene once the individual has been chosen to mutate
     tmtnsize:       In the case of tournament selection, the size of the tournament.
-    pool:           The pool of processes in the case we use parallelization
+
+    One has to make sure that the initiate_DEAP functions is called before the if __name__ == '__main__'. The toolbox has to be registered before that (global scope)
     '''
     creator.create('FitnessMax', base.Fitness, weights = (1.0,)) # If wanted to minimize, weight negative
     creator.create('Individual', list, fitness = creator.FitnessMax)
@@ -24,18 +25,15 @@ def initiate_DEAP(fitness_func, parallel, generange = (0,1), indsize = 18, mutpr
     toolbox.register('individual', tools.initRepeat, creator.Individual, toolbox.genes, indsize)
     toolbox.register('population', tools.initRepeat, list, toolbox.individual)
 
-    toolbox.register('evaluate', fitness_func) # The evaluation will be performed calling the alias evaluate. It is important to not fix its argument here. 
+    toolbox.register('evaluate', fitness_func, params) # The evaluation will be performed calling the alias evaluate. It is important to not fix its argument here. 
     toolbox.register('mate', tools.cxTwoPoint)
     toolbox.register('mutate', tools.mutGaussian, mu = (generange[1]- generange[0])/2, sigma = (generange[1]- generange[0])/20,indpb = mutprob) # Real number only mutation. Let's see how it works
     toolbox.register('select', tools.selTournament, tournsize = 3)
-    if parallel:
-        # Initialization of the process pool and setting up the map function
-        toolbox.register('map', pool.map)
-    else:
-        toolbox.register('map', map)
+
+    return toolbox, creator
 
 
-def main( num_generations, popsize, mutindprob, coprob, indsize):
+def main(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, parallel, pool = None):
     '''
     Runs the DEAP Genetic Algorithm. Main characteristics of the algorithm need to be passed now:
 
@@ -43,12 +41,25 @@ def main( num_generations, popsize, mutindprob, coprob, indsize):
     popsize:        Population size for each generation
     mutindprob:     Probability of selecting an individual for mutation
     coprob:         Probability of selecting a pair of individuals for crossover
+    indsize:        Size of the individuals (number of genes)
+    toolbox:        The DEAP toolbox created in the initiate_DEAP function
+    creator:        The DEAP creator class created in the initiate_DEAP function
+    parallel:       Boolean indicating if we want to evaluate fitness functions on individuals in a parallel manner
+    pool:           The pool of processes in the case that we use parallelization. with Pool(processes = 4) as pool.
 
     Outputs:
     bestsols:   An array containing, in each row, the best individual of each generation
     maxfits:    A list containing the largest fitness in each generation
     avgfits:    A list containing the average fitness in each generation
+
+    If we are using parallel processing, the with Pool as pool has to be called inside if __name__=='__main__'
     '''
+    if parallel:
+        
+        toolbox.register('map', pool.map)
+    else:
+        toolbox.register('map', map)
+    
     bestsols = np.zeros((num_generations, indsize))
     maxfits = []
     avgfits = []
@@ -92,6 +103,8 @@ def main( num_generations, popsize, mutindprob, coprob, indsize):
         avgfits.append(np.mean(fits))
         bestsols[i,:] = np.array(pop[idx])
 
+    playsound('beep_sound.wav') # Small beep as a notification that the code has been run
+
     return maxfits, avgfits, bestsols
 
-# PyGAD algorithm. Might clean up afterwards if I have more time (which I won't) but since I don't plan on using pyGAD anymore, i won't waste my time in here.
+# PyGAD algorithm.

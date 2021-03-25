@@ -233,11 +233,6 @@ def obtaindynamicsNET(params, tspan, tstep, v):
         x1,t1 = HeunNET(x0, tspan, tstep, derivativesNET_V1, funparams) 
     elif v==2:
         funparams = unpackingNET_V2(params)
-        plt.subplot(121)
-        plt.imshow(funparams[15], vmin = 0, vmax = np.amax(funparams[15]))
-        plt.subplot(122)
-        plt.imshow(funparams[16], vmin = 0, vmax = np.amax(funparams[16]))
-        plt.show()
         x1,t1 = HeunNET(x0, tspan, tstep, derivativesNET_V2, funparams)
     else:
         print('No version has been selected. Dynamics not obtained.')
