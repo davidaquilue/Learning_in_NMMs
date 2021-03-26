@@ -1,7 +1,6 @@
 # Genetic Algorithms. Two modules: PyGAD and DEAP
 from deap import base, creator, tools
 from tqdm import tqdm; import numpy as np
-from playsound import playsound
 
 # DEAP Algorithm.
 def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob = 0.05, tmntsize = 3):
@@ -102,8 +101,6 @@ def main(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator
         maxfits.append(np.amax(fits))
         avgfits.append(np.mean(fits))
         bestsols[i,:] = np.array(pop[idx])
-
-    playsound('beep_sound.wav') # Small beep as a notification that the code has been run
 
     return maxfits, avgfits, bestsols
 

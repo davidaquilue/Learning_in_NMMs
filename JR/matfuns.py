@@ -53,15 +53,31 @@ def regularity(y):
   else:
     return np.partition(peaks, -2)[-2]
     
-def crosscorrelation(y,z,nintegration = 10000, maxlag = 5, tstep = 0.001):
-  # Both vectors should have the same length and have to be normalized. We take 10 seconds for the integration.
+def crosscorrelation(y1,y2,nintegration = 10000, maxlag = 5, tstep = 0.001):
+  # Both vectors need to have the same length. We take 10 seconds for the integration.
+  y = normalize(y1); z = normalize(y2)
   tauvec = np.arange(0,maxlag,tstep) # We obtain the crosscorrelation up to a lag of 5s (should be enough for alpha rhythms).
   # Later on, we shall be more careful with some of these affirmations.
   crosscorr = np.zeros_like(tauvec)
 
   for ii, tau in enumerate(tauvec):
-      crosscorr[ii] = np.correlate(y[0:nintegration],z[ii:nintegration+ii], 'valid')
+      crosscorr[ii] = np.sum(y[0:nintegration]*z[ii:nintegration+ii])
   return tauvec, crosscorr/nintegration
+
+@njit(fastmath = True)
+def maxcrosscorrelation(y1, y2, nintegration = 10000, maxlag = 10, tstep = 0.001):
+  _, crossc = crosscorrelation(y1, y2, nintegration, maxlag, tstep)
+  maxcrossc = np.amax(crossc)
+  # This next part of code is used to account for numerial imprecision in the multiplications and normalizations. 
+  if maxcrossc > 1.2:
+    print('Correlation value not valid')
+    return 0
+  else:
+    if maxcrossc > 1:
+      return 1
+    else:
+      return maxcrossc
+
     
 @njit(fastmath = usefastmath)
 def networkmatrix(tuplenetwork, recurrent):
@@ -89,22 +105,6 @@ def networkmatrix(tuplenetwork, recurrent):
   if recurrent:
       matrix = matrix + np.identity(Nnodes)
   return Nnodes, matrix
-
-@njit(fastmath = True)
-### CREO QUE ESTA FUNCION HABRÃ QUE REVISARLA. POR LO MENOS LA BASE TEÃ“RICA
-### NINTEGRATION Y EL ARANGE NO ESTOY SEGURO DE QUE CUADREN DEL todo
-def maxcrosscorrelation(y1, y2, nintegration = 6000):
-  y1 = normalize(y1)
-  y2 = normalize(y2)
-  tauvec = np.arange(0,3000,1)
-
-  Ccorr = np.zeros_like(tauvec)
-
-  for tau in tauvec:
-      Ccorr[tau] = np.dot(y1[0:nintegration],y2[tau:nintegration+tau])
-    
-  return np.max(np.abs(Ccorr))/3000
-
 
 def findlayer(node, tuplenetwork):
   # Simple function that takes as inputs a node i and the architecture of the network

@@ -78,7 +78,7 @@ def plotanynet(y, t, span, tuplenetwork):
     yspan = (np.min(y)-1,np.max(y)+1)
     nodesperlayer = tuplenetwork[0]
     layers = len(tuplenetwork)
-    fig, axes = plt.subplots(nrows = layers, ncols = nodesperlayer);
+    fig, axes = plt.subplots(nrows = layers, ncols = nodesperlayer)
     
     fig.subplots_adjust(hspace=0.5)
     fig.set_figheight(2*layers)
