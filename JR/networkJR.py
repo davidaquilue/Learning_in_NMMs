@@ -1,3 +1,6 @@
+# All necessary functions to obtain the dynamics of a network of Jansen and Rit models of cortical columns
+# functions included: unpackingNET_V1, derivativesNET_V1, couplingval_V1, individual_to_weights, unpackingNET_V2, derivativesNET_V2, 
+# # couplingval_V2, HeunNet, obtaindynamicsNET
 import numpy as np; from numba import njit
 from matfuns import S, networkmatrix
 usefastmath = True
@@ -140,7 +143,7 @@ def derivativesNET_V2(inp, t, paramtup):
         y1 = x[3]
         z2 = x[4]
         y2 = x[5]
-        
+        pbar = np.random.uniform(120,360)
         # Coupled intensities, we obtain them from a function.
         pa, pb = couplingval_V2(inp, weights_exc[nn], weights_inh[nn], C3, e0, r, v0, nn, tuplenetwork, Nnodes)
 

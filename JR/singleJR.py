@@ -1,4 +1,5 @@
 # All necessary functions to describe a single Jansen and Rit cortical column model
+# Functions included: unpacking, derivatives, Heun_nonoise, obtaindynamics
 import numpy as np; from numba import njit
 from matfuns import S
 usefastmath = True

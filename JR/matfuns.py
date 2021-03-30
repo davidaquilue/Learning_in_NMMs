@@ -1,4 +1,6 @@
 # Mathematical functions
+# Functions included: S, autocorr, findpeaks, psd, normalize, regularity, crosscorrelation, maxcrosscorrelation,
+# networkmatrix, findlayer
 import numpy as np
 from numba import njit
 usefastmath = True

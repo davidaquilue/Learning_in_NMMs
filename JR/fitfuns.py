@@ -1,4 +1,4 @@
-from matfuns import S, psd, normalize, regularity, networkmatrix, crosscorrelation
+from matfuns import S, psd, normalize, regularity, networkmatrix, crosscorrelation, maxcrosscorrelation
 from plotfuns import plot3x3, plotanynet, plotcouplings3x3
 from networkJR import obtaindynamicsNET
 import numpy as np; from numba import njit
@@ -70,3 +70,38 @@ def fitness_function_amps(individual, params):
             y,t = obtaindynamicsNET(params, params['tspan'], params['tstep'])
 
     return fit,
+
+def fitness_function_cross(params, individual):
+    # Primer de tot el que farem és que siguin les màximes diferències
+    # In the case of amplitudes it will be interesting to see if the GA goes weights with really unplausible values
+    # What do we want to take into account? Maybe the span of y, maybe the mean of the amplitude, maybe the max or the min?
+    params['individual'] = np.array(individual)
+    itermax = 5
+    fit = 0
+    nodes0layer = params['tuplenetwork'][0]
+    nodeslastlayer = params['tuplenetwork'][-1]
+
+    #store_crosscorrelations = np.zeros(nodeslastlayer) # Depending on the algorithm we use we might need a vector/array to store
+    for it in range(itermax):
+        for ii in range(nodes0layer):
+            params['forcednode'] = ii
+            y,_ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 2)
+            # Again different behaviours can be stored.
+            # For the first two assumptions we will need that the first layer and last layer have the same amount of nodes:
+
+            # 1. We want to achieve correlation between the two nodes that are not the node parallel to the one that's been driven
+            idx_for_crossc = []
+            for jj in range(nodeslastlayer):
+                nodelastlayer = params['Nnodes'] - nodeslastlayer + jj
+                if ii == jj:
+                    continue
+                else:
+                    idx_for_crossc.append(nodelastlayer)
+            fit += maxcrosscorrelation(y[idx_for_crossc[0]], y[idx_for_crossc[1]])
+
+            # 2. We want to achieve correlation between the node that has been driven with its parallel in the last layer
+            #for jj in range(nodeslastlayer):
+                #if ii == jj:
+                    #fit += maxcrosscorrelation(y[ii], y[jj])
+
+            # Or other behaviors that I will think about later on...

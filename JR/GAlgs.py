@@ -1,4 +1,5 @@
 # Genetic Algorithms. Two modules: PyGAD and DEAP
+# Functions included: initiate_DEAP, main
 from deap import base, creator, tools
 from tqdm import tqdm; import numpy as np
 
@@ -32,7 +33,7 @@ def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob
     return toolbox, creator
 
 
-def main(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, parallel, pool = None):
+def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, parallel, pool = None):
     '''
     Runs the DEAP Genetic Algorithm. Main characteristics of the algorithm need to be passed now:
 
@@ -68,8 +69,7 @@ def main(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator
     for ind, fit in zip(pop, fitnesses):
         ind.fitness.values = fit # We store the results in the value of the fitness attribute of the individual class.
 
-
-    for i in tqdm(range(num_generations)):
+    for i in tqdm(range(num_generations), desc = 'Genetic Algorithm Running'):
         # Selection of the best individuals from the previous population
         offspring = toolbox.select(pop,len(pop))
         offspring = list(toolbox.map(toolbox.clone, offspring)) 

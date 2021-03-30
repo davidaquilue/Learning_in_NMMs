@@ -36,7 +36,7 @@ toolbox, creator = GAlgs.initiate_DEAP(fitness_function_reg, params, generange =
 if __name__ == '__main__':
     with Pool(processes = 4) as piscina:
         num_generations = 5; popsize = 4; mutindprob = 0.2; coprob = 0.5; indsize = indivsize
-        maxfits, avgfits, bestsols = GAlgs.main(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, 1, piscina)
+        maxfits, avgfits, bestsols = GAlgs.main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, 1, piscina)
         gens = np.linspace(1, 5, 5)
         plt.plot(gens, maxfits)
         plt.plot(gens, avgfits)

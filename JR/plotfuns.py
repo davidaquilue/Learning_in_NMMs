@@ -1,4 +1,5 @@
 # Plotting functions
+# Functions included: plot3x3, plotanynet, plotcouplings3x3, plotcouplings3x3V2
 import numpy as np; import matplotlib.pyplot as plt; from matplotlib import cm
 from matfuns import psd
 
@@ -93,7 +94,7 @@ def plotanynet(y, t, span, tuplenetwork):
     for nnodes in tuplenetwork: Nnodes += nnodes
     rr = 0; cc = 0
     for ii in range(Nnodes):
-        ax = axes[cc,rr]; cc += 1; 
+        ax = axes[cc,rr]; cc += 1
         if cc == nodesperlayer:
             rr += 1; cc = 0
         yy = y[ii]
@@ -134,18 +135,17 @@ def plotcouplings3x3(solution):
     return fig
 
 from networkJR import individual_to_weights
-def plotcouplings3x3V2(solution, matrix):
+def plotcouplings3x3V2(solution, matrix, maxminvals):
     ''' Returns an imshow of the excitatory and inhibitory weight matrix. solution is the vector of the individiual with best fitness.'''
     fig, axes = plt.subplots(1, 2)
-    minim = np.amin(solution); maxim = np.amax(solution)
     weights_exc, weights_inh = individual_to_weights(solution, matrix)
     ax = axes[0]
-    ax.imshow(weights_exc, vmin = minim, vmax = maxim)
+    ax.imshow(weights_exc, vmin = maxminvals[0], vmax = maxminvals[1])
     ax.set_title('Excitatory Coupling Coefficients')
     ax.set_xlabel('Node')
     ax.set_ylabel('Node')
     ax = axes[1]
-    im = ax.imshow(weights_inh, vmin = minim, vmax = maxim)
+    im = ax.imshow(weights_inh, vmin = maxminvals[0], vmax = maxminvals[1])
     ax.set_title('Inhibitory Coupling Coefficients')
     ax.set_xlabel('Node')
     ax.set_ylabel('Node')
