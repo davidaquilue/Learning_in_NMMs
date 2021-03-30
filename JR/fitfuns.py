@@ -85,7 +85,7 @@ def fitness_function_cross(params, individual):
     for it in range(itermax):
         for ii in range(nodes0layer):
             params['forcednode'] = ii
-            y,_ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 2)
+            y, = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 2)
             # Again different behaviours can be stored.
             # For the first two assumptions we will need that the first layer and last layer have the same amount of nodes:
 

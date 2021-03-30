@@ -54,7 +54,8 @@ def regularity(y):
     return 0
   else:
     return np.partition(peaks, -2)[-2]
-    
+
+@njit(fastmath = usefastmath)
 def crosscorrelation(y1,y2,nintegration = 10000, maxlag = 5, tstep = 0.001):
   # Both vectors need to have the same length. We take 10 seconds for the integration.
   y = normalize(y1); z = normalize(y2)
@@ -66,7 +67,7 @@ def crosscorrelation(y1,y2,nintegration = 10000, maxlag = 5, tstep = 0.001):
       crosscorr[ii] = np.sum(y[0:nintegration]*z[ii:nintegration+ii])
   return tauvec, crosscorr/nintegration
 
-@njit(fastmath = True)
+@njit(fastmath = usefastmath)
 def maxcrosscorrelation(y1, y2, nintegration = 10000, maxlag = 10, tstep = 0.001):
   _, crossc = crosscorrelation(y1, y2, nintegration, maxlag, tstep)
   maxcrossc = np.amax(crossc)
