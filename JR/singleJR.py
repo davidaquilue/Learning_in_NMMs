@@ -80,7 +80,7 @@ def Heun_nonoise(x0, tspan, tstep, fun, funparams):
     return x, tvec 
 
 
-def obtaindynamics(params, tspan, tstep):
+def obtaindynamics(params, tspan, tstep, derivatives, unpacking):
     ''' 
     Returns the evolution over time of the PSP of the pyramidal population.
     Inputs:
