@@ -34,16 +34,16 @@ def unpackingHEB(params):
 
 @njit(fastmath = usefastmath)
 def derivativesHEB(inp0, inp1, t, paramtup, W, K, O, stimnodes):
-    ''' Returns derivatives of the 8 variables of the model for each node
+    ''' Returns derivatives of the 6 variables of the model for each node
     Inputs:
-    inps:       A (N_nodes,8) matrices. inp0 correspods to the nodes of the first layer while inp1 corresponds to the nodes in the second layer.
+    inps:       A (N_nodes,6) matrices. inp0 correspods to the nodes of the first layer while inp1 corresponds to the nodes in the second layer.
     t:          step of time for which the values are those of inp
     paramtup:   Tuple containing all the parameters
     W:          First layers excitatory weights matrix. We will have to also input the second layer weight matrix.
     stimpat:    Which pattern is being stimulated at the moment: 1,2 or 3
 
     Output:
-    dz:     A (N_nodes,8) matrix, containing all the derivatives of the variables.
+    dz:     A (N_nodes,6) matrix, containing all the derivatives of the variables.
     '''
     A, B, v0, a, b, e0 , C1, C2, C3, C4, r, Totalcols, WL0L1, KL0L1 = paramtup
 
@@ -62,8 +62,6 @@ def derivativesHEB(inp0, inp1, t, paramtup, W, K, O, stimnodes):
             y1 = x[3]
             z2 = x[4]
             y2 = x[5]
-            z3 = x[6]
-            y3 = x[7]
 
             if (ii == 0) and (nn in stimnodes): pbar = np.random.normal(500,50)# Stimulated nodes are only those of the first layer
             else:   pbar = np.random.normal(50,10)
@@ -80,15 +78,12 @@ def derivativesHEB(inp0, inp1, t, paramtup, W, K, O, stimnodes):
             dy0 = z0
             dz1 = A*a*(pbar + C2*S(C1*y0,e0,r,v0) + pa) - a**2*y1 - 2*a*z1
             dy1 = z1
-            dz2 = B*b*(C4*S(C3*y0 + y3,e0,r,v0)) - 2*b*z2 - b**2*y2
+            dz2 = B*b*(C4*S(C3*y0,e0,r,v0) + pb) - 2*b*z2 - b**2*y2
             dy2 = z2
-            # Extra dynamical variable added in order to account for the inhibitory population
-            dz3 = A*a*(pb) - 2*a*z3 - a**2*y3
-            dy3 = z3
             if ii == 0:
-                dinp0[nn] = np.array([dz0, dy0, dz1, dy1, dz2, dy2, dz3, dy3])
+                dinp0[nn] = np.array([dz0, dy0, dz1, dy1, dz2, dy2])
             elif ii == 1:
-                dinp1[nn] = np.array([dz0, dy0, dz1, dy1, dz2, dy2, dz3, dy3])
+                dinp1[nn] = np.array([dz0, dy0, dz1, dy1, dz2, dy2])
     return dinp0, dinp1
 
 @njit(fastmath = usefastmath)
@@ -125,8 +120,8 @@ def HeunHEB(tspan, tstep, fun, funparams, stim_info, W, K, O, learnparams, train
     W:           The weights matrix that we will update after every step with the Hebbian learning algorithm
     learnparams: Parameters that will be used in the learning algorithm
     '''
-    x0_IC = np.random.normal(10,5,size=(Totalcols,8))
-    x1_IC = np.random.normal(10,5,size=(Totalcols,8)) # Random normally distributed IC
+    x0_IC = np.random.normal(10,5,size=(Totalcols,6))
+    x1_IC = np.random.normal(10,5,size=(Totalcols,6)) # Random normally distributed IC
     t0 = tspan[0]
     tf = tspan[1]
     nsteps = int((tf-t0)/tstep) # Number of total steps that will be taken.
@@ -184,7 +179,7 @@ def HeunHEB(tspan, tstep, fun, funparams, stim_info, W, K, O, learnparams, train
                     m = np.mean(S(x1[jj,n-Tpre:n,3]-x1[jj,n-Tpre:n,5],e0,r,v0)) # Presynaptic running average activity of pyramidal neurons
                     for ii in range(K.shape[0]):
                         if ii != jj:
-                            zii = S(C3*x1[ii,n,7],e0,r,v0)    # Postsynaptic activity of inhibitory neurons
+                            zii = S(C3*x1[ii,n,1],e0,r,v0)    # Postsynaptic activity of inhibitory neurons
                             if zii > vL and m > vL: 
                                 K[ii,jj] = K[ii,jj] + gammaK*(zii - vL)*(m-vL)*(Kmax-K[ii,jj])
                 # K should look the same way than W, but taking action in layer 1.
@@ -195,7 +190,7 @@ def HeunHEB(tspan, tstep, fun, funparams, stim_info, W, K, O, learnparams, train
                     mp = np.mean(S(x1[jj,n-Tpre:n,3]-x1[jj,n-Tpre:n,5],e0,r,v0)) # Presynaptic running average activity of pyramidal neurons
                     for ii in range(O.shape[0]):
                         if ii != jj:
-                            mi = np.mean(S(C3*x1[ii,n-Tpre:n,7],e0,r,v0))   # Postsynaptic running average of inhibitory so that columns in the same pattern don't inhibit each other.
+                            mi = np.mean(S(C3*x1[ii,n-Tpre:n,1],e0,r,v0))   # Postsynaptic running average of inhibitory so that columns in the same pattern don't inhibit each other.
                             if mi < vU and mp > vL:  # AntiHebbian rule
                                 O[ii,jj] = O[ii,jj] + gammaO*(vU - mi)*(mp - vL)*(Omax-O[ii,jj])
 
@@ -264,10 +259,10 @@ if __name__ == '__main__':
     Indexes_matrix = np.linspace(0,Totalcols-1, Totalcols).reshape(Shape)
 
     # Finally the learning parameters:
-    gammaW = 0.3; gammaK = 0.3; gammaO =  1.1; vL = 4.5; vU = 2; Wmax = 10; Kmax = 20.8; Omax = 6; Tpre = 20 
+    gammaW = 0.3; gammaK = 0.3; gammaO =  0.3; vL = 4.5; vU = 0.01; Wmax = 10; Kmax = 1; Omax = 1; Tpre = 20 
     learnparams = gammaW, gammaK, gammaO, vL, vU, Wmax, Kmax, Omax, Tpre
-    WL0L1 = 196;    params['WL0L1'] = WL0L1
-    KL0L1 = 186;    params['KL0L1'] = KL0L1
+    WL0L1 = 100;    params['WL0L1'] = WL0L1
+    KL0L1 = 1;    params['KL0L1'] = KL0L1
 
 
     # We are going to train 3 easy patterns
@@ -284,17 +279,16 @@ if __name__ == '__main__':
     # Training:
     y0, y1, t, W, K, O, tracking = obtaindynamicsHEB(params, tspan, tstep, stim_info, learnparams, True)
     print('Training Finished')
-    plt.subplot(131)
     plt.imshow(W)
     plt.title('W matrix')
     plt.colorbar()
+    plt.show()
 
-    plt.subplot(132)
     plt.imshow(K)
     plt.title('K matrix')
     plt.colorbar()
+    plt.show()
 
-    plt.subplot(133)
     plt.imshow(O)
     plt.title('O matrix')
     plt.colorbar()
@@ -340,7 +334,6 @@ if __name__ == '__main__':
     plt.title('Dynamics of pattern 3')
     plt.legend(loc = 'best')
     plt.show()
-
     
 
 

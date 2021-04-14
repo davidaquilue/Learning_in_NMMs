@@ -2,6 +2,7 @@ from matfuns import S, psd, normalize, regularity, networkmatrix, crosscorrelati
 from plotfuns import plot3x3, plotanynet, plotcouplings3x3
 from networkJR import obtaindynamicsNET
 import numpy as np; from numba import njit
+from itertools import combinations
 
 # Collection of different Fitness Functions used to evaluate the individuals of the Genetic Algorithm.
 
@@ -16,7 +17,7 @@ def fitness_function_reg(params, individual):
     regs = np.zeros((3,3)); arraybits = np.zeros((3,3))
     itermax = 10
     # We try to improve reliability of our results averaging over itermax different iterations.
-    for iter in range(itermax):
+    for it in range(itermax):
         # Three different simulations. In each one, we drive a different node from the first layer. 
         for ii in range(nodes0layer):
             params['forcednode'] = ii
@@ -55,22 +56,47 @@ def fitness_function_reg(params, individual):
     else:
         return fit, # For the DEAP algorithm we have to output a tuple of values thus the comma.
 
+
 # USING AMPLITUDES TO ENCODE INFORMATION
-def fitness_function_amps(individual, params):
+def fitness_function_amps(params, individual):
     # Primer de tot el que farem és que siguin les màximes diferències
+    # In the case of amplitudes it will be interesting to see if the GA goes weights with really unplausible values
     # What do we want to take into account? Maybe the span of y, maybe the mean of the amplitude, maybe the max or the min?
-    # Explore later on, when the 
     params['individual'] = np.array(individual)
     itermax = 5
     nodes0layer = params['tuplenetwork'][0]
     nodeslastlayer = params['tuplenetwork'][-1]
+    fit = 0
+    store_amplitudes = np.zeros((nodes0layer,nodeslastlayer)) # In this matrix we will store the characteristic of the amplitude that we want to obtain from a node.
     for it in range(itermax):
         for ii in range(nodes0layer):
             params['forcednode'] = ii
-            y,t = obtaindynamicsNET(params, params['tspan'], params['tstep'])
+            y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 2)
+            for jj in range(nodeslastlayer):
+              nodelastlayer = params['Nnodes'] - nodeslastlayer + jj
+              # We can store different behaviours of the dynamics of the nodes
 
-    return fit,
+              #1. Mean of signal
+              store_amplitudes[ii,jj] += np.mean(y[nodelastlayer])
+              #2. Span of signal
+              #store_amplitudes[ii,jj] = np.amax(y[nodelastlayer]) - np.amin(y[nodelastlayer])
+              #3. Max of signal
+              #store_amplitudes[ii,jj] = np.amax(y[nodelastlayer])
+              #4. Min of signal 
+              #store_amplitudes[ii,jj] += np.amin(y[nodelastlayer])
 
+        # And now we have to define how we want the amplitudes to be
+        # 1. We want that for each forced node, the differences between the means of the signal are as large as possible
+        #fit += diff_between_driven(store_amplitudes) # Maybe divide by itermax
+
+        # 2. Maybe maximize the difference between the nodes for a same forced node:
+        fit += diff_between_same(store_amplitudes)
+
+    # 3. Or other alternatives like combining 1 and 2, coding in binary and trying to obtain different numbers, etc..
+    return fit/itermax,
+
+
+# USING CROSS-CORRELATIONS TO ENCODE INFORMATION
 def fitness_function_cross(params, individual):
     # Primer de tot el que farem és que siguin les màximes diferències
     # In the case of amplitudes it will be interesting to see if the GA goes weights with really unplausible values
@@ -85,7 +111,7 @@ def fitness_function_cross(params, individual):
     for it in range(itermax):
         for ii in range(nodes0layer):
             params['forcednode'] = ii
-            y, = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 2)
+            y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 2)
             # Again different behaviours can be stored.
             # For the first two assumptions we will need that the first layer and last layer have the same amount of nodes:
 
@@ -98,10 +124,61 @@ def fitness_function_cross(params, individual):
                 else:
                     idx_for_crossc.append(nodelastlayer)
             fit += maxcrosscorrelation(y[idx_for_crossc[0]], y[idx_for_crossc[1]])
-
+            # 1.2
+            diffs = (1.2 - maxcrosscorrelation(y[ii], y[idx_for_crossc[0]]))**2 + (1.2 - maxcrosscorrelation(y[ii], y[idx_for_crossc[1]]))**2
+            fit += diffs
             # 2. We want to achieve correlation between the node that has been driven with its parallel in the last layer
             #for jj in range(nodeslastlayer):
                 #if ii == jj:
                     #fit += maxcrosscorrelation(y[ii], y[jj])
 
             # Or other behaviors that I will think about later on...
+
+    return fit/(nodes0layer*itermax),
+
+
+# USING PSDs TO ENCODE INFORMATION:
+def fitness_function_psds(params, individual):
+    params['individual'] = np.array(individual)
+    itermax = 5
+    nodes0layer = params['tuplenetwork'][0]
+    nodeslastlayer = params['tuplenetwork'][-1]
+
+    maxFs = np.zeros((nodes0layer,nodeslastlayer)) # In this matrix we will store the characteristic of the amplitude that we want to obtain from a node.
+    for it in range(itermax):
+        for ii in range(nodes0layer):
+            params['forcednode'] = ii
+            y,_ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 2)
+            for jj in range(nodeslastlayer):
+              nodelastlayer = params['Nnodes'] - nodeslastlayer + jj
+              yy = y[nodelastlayer]
+              f, PSD = psd(yy,params['tstep'])
+              # We obtain the frequency at which the spectral power density is maximal
+              maxFs[ii,jj] = np.abs(f[np.argmax(PSD)])
+    # Then we can proceed to the same evaluation af we have done previously, whether differences between nodes or other
+    # types of differences. I should think more deeply about these functions  
+
+
+
+# COMPLEMENTARY FUNCTIONS FOR FITNESS-FUNCTION EVALUATIONS
+# Matrix should be a (nodesfirstlayer,nodeslastlayer)
+def diff_between_driven(matrix):
+  '''The fitness is the accumulated difference between behaviors when driving different nodes'''
+  fit = 0
+  aux = np.arange(0, matrix.shape[0])
+  for idx1, idx2 in combinations(aux,2):
+    fit += np.sum((matrix[idx1]-matrix[idx2])**2)
+  return fit
+
+def diff_between_same(matrix):
+  '''The fitness is the accumulated difference between last layer's nodes when driving one node of the first layer'''
+  fit = 0
+  aux = np.arange(0, matrix.shape[1])
+  for ii in range(matrix.shape[0]):
+    row = matrix[ii]
+    for idx1, idx2 in combinations(aux,2):
+      fit += (row[idx1]-row[idx2])**2
+  return fit
+
+# This method might be really susceptible to local minima since differences get quite averaged. Plus, they could be behaving in a same manner for each driven node.
+# Maybe a combination of the two would be a good idea.
