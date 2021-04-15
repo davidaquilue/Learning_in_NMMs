@@ -9,6 +9,7 @@ from matfuns import networkmatrix, regularity, maxcrosscorrelation
 from multiprocessing import Pool, cpu_count
 import GAlgs
 from fitfuns import fitness_function_cross
+from scipy import signal
 
 # We first determine the paramaters of the JR model
 params = {'A': 3.25, 'B': 22.0, 'v0': 6.0} 
@@ -24,8 +25,8 @@ params['stimulation_mode'] = 1
 
 # Now we define the network architecture. Always feedforward and we can decide wether we want recurrencies or not
 params['tuplenetwork'] = (3,3,3)
-params['recurrent'] = True
-params['forcednode'] = 1
+params['recurrent'] = False
+params['forcednodes'] = (0,1,2)
 Nnodes, matrix =  networkmatrix(params['tuplenetwork'], params['recurrent'])
 indivsize = 2*np.count_nonzero(matrix)
 params['Nnodes'] = Nnodes
@@ -33,8 +34,31 @@ params['matrix'] = matrix
 params['tstep'] = 0.001
 params['tspan'] = (0,40)
 
+t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
+Sq_sig_Hz = 2
+phase1 = np.random.random(); duty1 = np.random.random()
+phase2 = np.random.random(); duty2 = np.random.random()
+signals = np.zeros(shape = (3, t.size))
+signals[0] = 120 + 250*(1+signal.square(2*np.pi*(Sq_sig_Hz*t + phase1), duty1))/2
+signals[1] = 120 + 250*(1+signal.square(2*np.pi*(Sq_sig_Hz*t + phase2), duty2))/2
+signals[2] = 120 + 250*np.abs(1-(1+signal.square(2*np.pi*(Sq_sig_Hz*t + phase1), duty1))/2)
+params['signals'] = signals
+
+'''
+params['individual'] = np.load('best_ind.npy')
+y , t = obtaindynamicsNET(params, params['tspan'], params['tstep'], 3)
+
+fig = plot3x3(y,t, 'small', params['tstep'])
+plt.show()
+
+
+
+'''
 # This has to go before the if name = main and before running the program.
-toolbox, creator = GAlgs.initiate_DEAP(fitness_function_cross, params, generange = (0,10*C), indsize = indivsize)
+
+maxgene = 0.5*C
+mingene = 0
+toolbox, creator = GAlgs.initiate_DEAP(fitness_function_cross, params, generange = (mingene,maxgene), indsize = indivsize)
     
 if __name__ == '__main__':
     last_test = int(os.listdir(path + '/Resultats')[-1])
@@ -45,7 +69,7 @@ if __name__ == '__main__':
 
     print('Actual test: ' + str(testn))
     with Pool(processes= 4) as piscina:
-        num_generations = 40; popsize = 20; mutindprob = 0.4; coprob = 0.5; indsize = indivsize
+        num_generations = 40; popsize = 20; mutindprob = 0.5; coprob = 0.5; indsize = indivsize
         maxfits, avgfits, bestsols = GAlgs.main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, 1, piscina)
         # Plot the maximum fitnesses and average fitnesses of each generation
         gens = np.linspace(1,num_generations, num_generations)
@@ -53,16 +77,34 @@ if __name__ == '__main__':
         plt.plot(gens, avgfits)
         plt.title('Evolution of fitness')
         plt.savefig(newfolder + "/fitness.jpg")
-        #plt.show()
+        plt.show()
         # Obtain the best solution of the population
         solution = bestsols[np.argmax(maxfits)]
 
 
-        fig = plotcouplings3x3V2(solution, matrix, (0,10*C))
+        fig = plotcouplings3x3V2(solution, matrix, (mingene, maxgene))
         fig.savefig(newfolder + "/bestweights.jpg")
+        plt.show()
         np.save(newfolder + '/best_ind', solution)
 
         norms = np.array([np.sum(weight**2) for weight in bestsols])
         plt.plot(gens, norms)
         plt.title('Evolution of the norm of the max fitness weights')
         plt.savefig(newfolder + "/normevol.jpg")
+        plt.show()
+
+        solution = np.array(solution)
+        params['individual'] = solution
+        # And let's observe the dynamics
+        y , t = obtaindynamicsNET(params, params['tspan'], params['tstep'], 3)
+
+        typeplot = 'small'
+        fig = plot3x3(y,t, typeplot, params['tstep'])
+        saving = newfolder + '/Dynamics' + typeplot + '.png'
+        fig.savefig(saving)
+        plt.show()
+        print('Correlation 6 with 7: ' + str(maxcrosscorrelation(y[6], y[7])))
+        print('Correlation 6 with 8: ' + str(maxcrosscorrelation(y[6], y[8])))
+        print('Correlation 7 with 8: ' + str(maxcrosscorrelation(y[7], y[8])))
+
+# Estaria guay que a lo mejor escupiera las diferentes autocorrelaciones para ver porqué son tan parecidas.

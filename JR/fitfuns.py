@@ -104,37 +104,24 @@ def fitness_function_cross(params, individual):
     params['individual'] = np.array(individual)
     itermax = 5
     fit = 0
-    nodes0layer = params['tuplenetwork'][0]
-    nodeslastlayer = params['tuplenetwork'][-1]
 
     #store_crosscorrelations = np.zeros(nodeslastlayer) # Depending on the algorithm we use we might need a vector/array to store
     for it in range(itermax):
-        for ii in range(nodes0layer):
-            params['forcednode'] = ii
-            y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 2)
-            # Again different behaviours can be stored.
-            # For the first two assumptions we will need that the first layer and last layer have the same amount of nodes:
+        y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 3)
+        # Again different behaviours can be stored.
+        # For the first two assumptions we will need that the first layer and last layer have the same amount of nodes:
 
-            # 1. We want to achieve correlation between the two nodes that are not the node parallel to the one that's been driven
-            idx_for_crossc = []
-            for jj in range(nodeslastlayer):
-                nodelastlayer = params['Nnodes'] - nodeslastlayer + jj
-                if ii == jj:
-                    continue
-                else:
-                    idx_for_crossc.append(nodelastlayer)
-            fit += maxcrosscorrelation(y[idx_for_crossc[0]], y[idx_for_crossc[1]])
-            # 1.2
-            diffs = (1.2 - maxcrosscorrelation(y[ii], y[idx_for_crossc[0]]))**2 + (1.2 - maxcrosscorrelation(y[ii], y[idx_for_crossc[1]]))**2
-            fit += diffs
-            # 2. We want to achieve correlation between the node that has been driven with its parallel in the last layer
-            #for jj in range(nodeslastlayer):
-                #if ii == jj:
-                    #fit += maxcrosscorrelation(y[ii], y[jj])
+        # Testing if GA can synchronize two while they are desynchronized with the other
+        fit += maxcrosscorrelation(y[6], y[8]) - (maxcrosscorrelation(y[6], y[7]) + maxcrosscorrelation(y[7], y[8]))/2
 
-            # Or other behaviors that I will think about later on...
+        # 2. We want to achieve correlation between the node that has been driven with its parallel in the last layer
+        #for jj in range(nodeslastlayer):
+            #if ii == jj:
+                #fit += maxcrosscorrelation(y[ii], y[jj])
 
-    return fit/(nodes0layer*itermax),
+        # Or other behaviors that I will think about later on...
+
+    return fit/(itermax),
 
 
 # USING PSDs TO ENCODE INFORMATION:

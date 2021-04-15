@@ -1,15 +1,15 @@
 # All necessary functions to obtain the dynamics of a network of Jansen and Rit models of cortical columns
 # functions included: unpackingNET_V1, derivativesNET_V1, couplingval_V1, individual_to_weights, unpackingNET_V2, derivativesNET_V2, 
-# # couplingval_V2, HeunNet, obtaindynamicsNET
+# # couplingval_V2, unpackingNET_V3, derivativesNET_V3, HeunNet, obtaindynamicsNET
 import numpy as np; from numba import njit
 from matfuns import S, networkmatrix
 usefastmath = True
 
-# Version 1. One excit/inhib parameter per column. In version 2, every connexion in the matrix will have a different value
+# VERSION 1. One excit/inhib parameter per column. In version 2, every connexion in the matrix will have a different value
 def unpackingNET_V1(params):
     '''Returns the values of the parameters in the dictionary params in a tuple so that we can work with numba'''
     A, B, v0, a, b, e0, pbar = params['A'],params['B'],params['v0'],params['a'], params['b'], params['e0'], params['pbar']
-    delta, f, C, C1, C2 = params['delta'], params['f'], params['C'], params['C1'], params['C2']
+    delta, f, C1, C2 = params['delta'], params['f'], params['C1'], params['C2']
     C3, C4, r = params['C3'], params['C4'], params['r'] # JR Model Params
 
     # Network architecture params
@@ -17,21 +17,21 @@ def unpackingNET_V1(params):
     Nnodes = params['Nnodes']
     tuplenetwork = params['tuplenetwork']
     forcednode = params['forcednode']
-    stimulation_mode = params['stimulation_mode']
     individual = params['individual']
-    return (A, B, v0, a, b, e0 , pbar, delta, f, C, C1, C2, C3, C4, r, individual, matrix, Nnodes, tuplenetwork, forcednode, stimulation_mode)
+    return (A, B, v0, a, b, e0 , pbar, delta, f, C1, C2, C3, C4, r, individual, matrix, Nnodes, tuplenetwork, forcednode)
     
 
 @njit(fastmath = usefastmath)
-def derivativesNET_V1(inp, t, paramtup):
+def derivativesNET_V1(inp, t, paramtup, n):
     ''' Returns derivatives of the 6 variables of the model for each node
     Inputs:
     inp:    A (N_nodes,6) matrix
-    t:      step of time for which the values are those of inp
+    t:      step of time for which the values are those of inp. t = tvec[n]
+    n:      Step of the iteration
     Output:
     dz:     A (N_nodes,6) matrix, containing all the derivatives of the variables.
     '''
-    A, B, v0, a, b, e0 , pbar, delta, f, C, C1, C2, C3, C4, r, individual, matrix, Nnodes, tuplenetwork, forcednode, stimulation_mode = paramtup
+    A, B, v0, a, b, e0 , pbar, delta, f, C1, C2, C3, C4, r, individual, matrix, Nnodes, tuplenetwork, forcednode = paramtup
 
     # Now the input will be a matrix where each row i corresponds to the variables (z0,y0,z1,y1,z2,y2) of each node i.
     dz = np.zeros_like(inp)
@@ -88,8 +88,7 @@ def couplingval_V1(inp, connections, individual, C3, e0, r, v0, nn, tuplenetwork
     return pa,pb
 
 
-
-# Version 2. Each connection consists of different excitatory and inhibitory weights
+# VERSION 2. Each connection consists of different excitatory and inhibitory weights
 def individual_to_weights(individual, matrix):
     '''Individual is transformed into two weight arrays. Individual should have size of 2*np.count_nonzero(matrix)'''
     individual = np.array(individual)
@@ -107,7 +106,7 @@ def individual_to_weights(individual, matrix):
 def unpackingNET_V2(params):
     '''Returns the values of the parameters in the dictionary params in a tuple so that we can work with numba'''
     A, B, v0, a, b, e0, pbar = params['A'],params['B'],params['v0'],params['a'], params['b'], params['e0'], params['pbar']
-    delta, f, C, C1, C2 = params['delta'], params['f'], params['C'], params['C1'], params['C2']
+    delta, f, C1, C2 = params['delta'], params['f'], params['C1'], params['C2']
     C3, C4, r = params['C3'], params['C4'], params['r'] # JR Model Params
 
     # Network architecture params
@@ -115,22 +114,22 @@ def unpackingNET_V2(params):
     Nnodes = params['Nnodes']
     tuplenetwork = params['tuplenetwork']
     forcednode = params['forcednode']
-    stimulation_mode = params['stimulation_mode']
     individual = params['individual']
     weights_exc, weights_inh = individual_to_weights(individual, matrix)
 
-    return (A, B, v0, a, b, e0 , pbar, delta, f, C, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednode, stimulation_mode)
+    return (A, B, v0, a, b, e0 , pbar, delta, f, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednode)
 
 @njit(fastmath = usefastmath)
-def derivativesNET_V2(inp, t, paramtup):
+def derivativesNET_V2(inp, t, paramtup, n):
     ''' Returns derivatives of the 6 variables of the model for each node
     Inputs:
     inp:    A (N_nodes,6) matrix
-    t:      step of time for which the values are those of inp
+    t:      step of time for which the values are those of inp. t = tvec[n]
+    n:      Step of the iteration
     Output:
     dz:     A (N_nodes,6) matrix, containing all the derivatives of the variables.
     '''
-    A, B, v0, a, b, e0 , pbar, delta, f, C, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednode, stimulation_mode = paramtup
+    A, B, v0, a, b, e0 , pbar, delta, f, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednode = paramtup
 
     # Now the input will be a matrix where each row i corresponds to the variables (z0,y0,z1,y1,z2,y2) of each node i.
     dz = np.zeros_like(inp)
@@ -176,8 +175,68 @@ def couplingval_V2(inp, row_weights_exc, row_weights_inh, C3, e0, r, v0, nn, tup
             pb = pb + row_weights_inh[node]*S(C3*inp[node, 1], e0, r, v0)
     return pa,pb
 
-# I think that the other functions can be used aswell.
 
+# VERSION 3. The excitation comes from a time dependent signal, using as in version 2, a pair of coupling values per connection, thus couplingval_V2 will be used.
+def unpackingNET_V3(params):
+    '''Returns the values of the parameters in the dictionary params in a tuple so that we can work with numba'''
+    A, B, v0, a, b, e0, pbar = params['A'],params['B'],params['v0'],params['a'], params['b'], params['e0'], params['pbar']
+    C1, C2 = params['C1'], params['C2']
+    C3, C4, r = params['C3'], params['C4'], params['r'] # JR Model Params
+
+    # Network architecture params
+    matrix = params['matrix']
+    Nnodes = params['Nnodes']
+    tuplenetwork = params['tuplenetwork']
+    # It will help with things if forcednode is a tuple of the nodes of the firstlayer like (0,1,2)
+    forcednodes = params['forcednodes']
+    individual = params['individual']
+    weights_exc, weights_inh = individual_to_weights(individual, matrix)
+
+    # Signals, that will be built outside the dynamics functions and will have to be the same length as will be the resulting vectors.
+    signals = params['signals']# shape of (nodesfirstlayer, nsteps)
+
+    return (A, B, v0, a, b, e0 , pbar, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednodes, signals)
+
+@njit(fastmath = usefastmath)
+def derivativesNET_V3(inp, t, paramtup, n):
+    ''' Returns derivatives of the 6 variables of the model for each node
+    Inputs:
+    inp:    A (N_nodes,6) matrix
+    t:      step of time for which the values are those of inp. t = tvec[n]
+    n:      Step of the iteration
+    Output:
+    dz:     A (N_nodes,6) matrix, containing all the derivatives of the variables.
+    '''
+    A, B, v0, a, b, e0 , pbar, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednodes, signals = paramtup
+    # Now the input will be a matrix where each row i corresponds to the variables (z0,y0,z1,y1,z2,y2) of each node i.
+    dz = np.zeros_like(inp)
+    # Now we obtain the derivatives of every variable for every node.
+    for nn in range(Nnodes):
+        x = inp[nn] # This will extract the row corresponding to each node.
+        z0 = x[0]
+        y0 = x[1]
+        z1 = x[2]
+        y1 = x[3]
+        z2 = x[4]
+        y2 = x[5]
+        pbar = np.random.uniform(120,360)
+        # Coupled intensities, we obtain them from a function.
+        pa, pb = couplingval_V2(inp, weights_exc[nn], weights_inh[nn], C3, e0, r, v0, nn, tuplenetwork, Nnodes)
+
+        if nn in forcednodes:
+            pbar = signals[nn, n]
+        # Derivatives of each variable.
+        dz0 = A*a*S(y1-y2,e0,r,v0) - 2*a*z0 - a**2*y0
+        dy0 = z0
+        dz1 = A*a*(pbar + C2*S(C1*y0,e0,r,v0) + pa) - a**2*y1 - 2*a*z1 
+        dy1 = z1
+        dz2 = B*b*(C4*S(C3*y0,e0,r,v0)+ pb) - 2*b*z2 - b**2*y2
+        dy2 = z2
+        dz[nn] = np.array([dz0, dy0, dz1, dy1, dz2, dy2])
+    return dz
+
+
+# OBTAINING DYNAMICS FUNCTIONS
 @njit(fastmath = usefastmath)
 def HeunNET(x0, tspan, tstep, fun, funparams):
     '''
@@ -202,16 +261,15 @@ def HeunNET(x0, tspan, tstep, fun, funparams):
     # Loop. Main algorithm of the Heun Method.
     for n in range(nsteps-1):
         t1 = tvec[n]
-        f1 = fun(x[:,n,:], t1, funparams)
+        f1 = fun(x[:,n,:], t1, funparams, n)
         
         aux = x[:,n,:] + tstep*f1
         
         t2 = tvec[n+1]
-        f2 = fun(aux, t2, funparams)
+        f2 = fun(aux, t2, funparams, n)
         x[:,n+1,:] = x[:,n,:] + 0.5*tstep*(f1 + f2)
         
-    return x, tvec 
-import matplotlib.pyplot as plt
+    return x, tvec
 
 def obtaindynamicsNET(params, tspan, tstep, v):
     ''' 
@@ -234,9 +292,12 @@ def obtaindynamicsNET(params, tspan, tstep, v):
     if v == 1:
         funparams = unpackingNET_V1(params)
         x1,t1 = HeunNET(x0, tspan, tstep, derivativesNET_V1, funparams) 
-    elif v==2:
+    elif v == 2:
         funparams = unpackingNET_V2(params)
         x1,t1 = HeunNET(x0, tspan, tstep, derivativesNET_V2, funparams)
+    elif v == 3:
+        funparams = unpackingNET_V3(params)
+        x1, t1 = HeunNET(x0, tspan, tstep, derivativesNET_V3, funparams)
     else:
         print('No version has been selected. Dynamics not obtained.')
 
