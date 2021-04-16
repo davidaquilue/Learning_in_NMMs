@@ -1,0 +1,14 @@
+IMPROVEMENTS AND STUDIES TO BE DONE WITH THE JR MODEL NETWORK
+
+COMPUTATIONAL IMPROVEMENTS
+
+
+FURTHER STUDIES
+1. EXCITATION: Pyramidal populations are responsible for long range connections, maybe pyramidal populations from columns in previous layers could excite all subsequent layers, that is, 
+layer 0 exciting layer 1 and layer 2 (or 3,4,etc. if there are more). This would imply that the excitatory coupling weights is lower triangular.
+
+2. MEMORY: Maybe designing some feedback (with some delay in time to make it more realistic) between layers, instead of node to node, would show us behavior similar to memory. This could
+be tested by stopping the excitation in the inputs, that is stopping the train of density pulses and only white noise that provokes alfa rhythms. See how much time the spiking or the 
+evoked behavior continues, or if it does at all.
+
+3. SPIKE TRANSPORTATION: Create spikes in the input layers very localized in time and see how they propagate through the network. 

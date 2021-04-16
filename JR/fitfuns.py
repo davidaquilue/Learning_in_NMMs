@@ -1,10 +1,40 @@
+'''Collection of fitness functions that can be used in the Genetic Algorithm.
+
+Functions included: fitness_function_cross_V2, fitness_function_reg, fitness_functions_amps, 
+fitness_functions_cross, fitness_functions_psds and complementary functions'''
 from matfuns import S, psd, normalize, regularity, networkmatrix, crosscorrelation, maxcrosscorrelation
 from plotfuns import plot3x3, plotanynet, plotcouplings3x3
 from networkJR import obtaindynamicsNET
 import numpy as np; from numba import njit
 from itertools import combinations
 
-# Collection of different Fitness Functions used to evaluate the individuals of the Genetic Algorithm.
+# MAIN FITNESS FUNCTION THAT WILL BE USED DURING THE DEVELOPMENT OF THE THESIS
+def fitness_function_cross_V2(params, individual):
+    '''This fitness function is multiobjective'''
+    params['individual'] = np.array(individual) # Set of weights
+    nodes_in_lastlayer = params['tuplenetwork'][-1]; idx_nodes_lastlayer = params['Nnodes'] - nodes_in_lastlayer # Indexes for correlation computing
+    fit0 = 0; fit1 = 0; fit2 = 0
+    iters = 5
+    for it in range(iters):
+        for ii, (pair,unsync) in enumerate(zip(params['pairs'], params['unsync'])): # Iterating over everyone of the three different combinations
+
+            params['signals'] = params['All_signals'][ii] # Change between the three different sets of signals available. Have to be obtained from outside because of their random description
+            y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 3)
+
+            idxcomp1 = idx_nodes_lastlayer + pair[0]; idxcomp2 = idx_nodes_lastlayer + pair[0]; idxunsync = idx_nodes_lastlayer + unsync # More index algebra
+
+            # Fitness computed for every situation
+            if ii == 0:
+                fit0 += maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - (maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
+            elif ii == 1:
+                fit1 += maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - (maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
+            elif ii == 2:
+                fit2 += maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - (maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
+
+    return fit0/iters, fit1/iters, fit2/iters
+
+
+# OTHER FITNESS FUNCTIONS USED DURING THE EXPLORATION OF POSSIBILITIES (can be ignored for the moment)
 
 # USING REGULARITIES TO ENCODE INFORMATION 
 def fitness_function_reg(params, individual):
@@ -21,7 +51,7 @@ def fitness_function_reg(params, individual):
         # Three different simulations. In each one, we drive a different node from the first layer. 
         for ii in range(nodes0layer):
             params['forcednode'] = ii
-            y , t = obtaindynamicsNET(params, params['tspan'], params['tstep'],2)
+            y , _ = obtaindynamicsNET(params, params['tspan'], params['tstep'],2)
             # For each node of the first layer driven, we store the regularities of the last layer in a different row of regs.
             for ll,yy in enumerate(y[-nodeslastlayer:]):
                 regs[ii,ll] += regularity(yy)
@@ -59,9 +89,6 @@ def fitness_function_reg(params, individual):
 
 # USING AMPLITUDES TO ENCODE INFORMATION
 def fitness_function_amps(params, individual):
-    # Primer de tot el que farem és que siguin les màximes diferències
-    # In the case of amplitudes it will be interesting to see if the GA goes weights with really unplausible values
-    # What do we want to take into account? Maybe the span of y, maybe the mean of the amplitude, maybe the max or the min?
     params['individual'] = np.array(individual)
     itermax = 5
     nodes0layer = params['tuplenetwork'][0]
@@ -98,9 +125,6 @@ def fitness_function_amps(params, individual):
 
 # USING CROSS-CORRELATIONS TO ENCODE INFORMATION
 def fitness_function_cross(params, individual):
-    # Primer de tot el que farem és que siguin les màximes diferències
-    # In the case of amplitudes it will be interesting to see if the GA goes weights with really unplausible values
-    # What do we want to take into account? Maybe the span of y, maybe the mean of the amplitude, maybe the max or the min?
     params['individual'] = np.array(individual)
     itermax = 5
     fit = 0
@@ -122,7 +146,6 @@ def fitness_function_cross(params, individual):
         # Or other behaviors that I will think about later on...
 
     return fit/(itermax),
-
 
 # USING PSDs TO ENCODE INFORMATION:
 def fitness_function_psds(params, individual):
@@ -146,8 +169,8 @@ def fitness_function_psds(params, individual):
     # types of differences. I should think more deeply about these functions  
 
 
-
 # COMPLEMENTARY FUNCTIONS FOR FITNESS-FUNCTION EVALUATIONS
+
 # Matrix should be a (nodesfirstlayer,nodeslastlayer)
 def diff_between_driven(matrix):
   '''The fitness is the accumulated difference between behaviors when driving different nodes'''

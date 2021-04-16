@@ -1,21 +1,27 @@
-# Running Genetic Algorithm and Saving Figures in Cluster.
+'''Main Script. It runs the Genetic Algorithm and Saves the results. Modifications should be
+performed in this module's code.'''
+
 import os
-path = os.getcwd()
-#print(path) # First time to see how the format of the directory is
-import numpy as np; import matplotlib.pyplot as plt
-from plotfuns import plot3x3, plotcouplings3x3V2
+from multiprocessing import Pool
+import numpy as np
+import matplotlib.pyplot as plt
+
+from matfuns import networkmatrix, maxcrosscorrelation, creating_signals # network_matrix_exc_inh
+from plotfuns import plotcouplings3x3V2, plot3x3_signals
 from networkJR import obtaindynamicsNET
-from matfuns import networkmatrix, regularity, maxcrosscorrelation
-from multiprocessing import Pool, cpu_count
-import GAlgs
-from fitfuns import fitness_function_cross
-from scipy import signal
+from fitfuns import fitness_function_cross_V2
+import galgs
+
+path = os.getcwd
+
 
 # We first determine the paramaters of the JR model
 params = {'A': 3.25, 'B': 22.0, 'v0': 6.0} 
-params['a'], params['b'], params['e0'], params['pbar'], params['delta'], params['f'] = 100.0, 50.0, 2.5, 155.0, 65.0, 8.5
-C = 133.5
-params['C'], params['C1'], params['C2'], params['C3'], params['C4'] = C, C, 0.8*C, 0.25*C, 0.25*C # All dimensionless
+params['a'], params['b'], params['e0'] = 100.0, 50.0, 2.5
+params['pbar'], params['delta'], params['f'] = 155.0, 65.0, 8.5
+
+params['C'] = C = 133.5
+params['C1'], params['C2'], params['C3'], params['C4'] = C, 0.8*C, 0.25*C, 0.25*C # Dimensionless
 
 params['r'] = 0.56 #mV^(-1)
 
@@ -23,42 +29,39 @@ params['delta'] = 72.09
 params['f'] = 8.6
 params['stimulation_mode'] = 1
 
-# Now we define the network architecture. Always feedforward and we can decide wether we want recurrencies or not
-params['tuplenetwork'] = (3,3,3)
+# Now we define the network architecture. Always feedforward and we can decide wether we want
+# recurrencies or not
+params['tuplenetwork'] = (3, 3, 3)
 params['recurrent'] = False
-params['forcednodes'] = (0,1,2)
-Nnodes, matrix =  networkmatrix(params['tuplenetwork'], params['recurrent'])
+params['forcednodes'] = (0, 1, 2)
+Nnodes, matrix = networkmatrix(params['tuplenetwork'], params['recurrent'])
+# For further tests
+# Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v = 0)
+# indivsize = np.count_nonzero(matrix_exc) + np.count_nonzero(matrix_inh)
 indivsize = 2*np.count_nonzero(matrix)
 params['Nnodes'] = Nnodes
 params['matrix'] = matrix
 params['tstep'] = 0.001
 params['tspan'] = (0,40)
 
+# Now we define the settings for the construction of the input signals.
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
-Sq_sig_Hz = 2
-phase1 = np.random.random(); duty1 = np.random.random()
-phase2 = np.random.random(); duty2 = np.random.random()
-signals = np.zeros(shape = (3, t.size))
-signals[0] = 120 + 250*(1+signal.square(2*np.pi*(Sq_sig_Hz*t + phase1), duty1))/2
-signals[1] = 120 + 250*(1+signal.square(2*np.pi*(Sq_sig_Hz*t + phase2), duty2))/2
-signals[2] = 120 + 250*np.abs(1-(1+signal.square(2*np.pi*(Sq_sig_Hz*t + phase1), duty1))/2)
-params['signals'] = signals
+amp = 250
+dc = 120
+f = 2
+params['pairs'] = ((0, 1), (0,2), (1, 2))
+params['unsync'] = (2, 1, 0)
+# For each pair corresponds a matrix of signals. In total: a matrix o matrices
+All_signals = np.zeros(shape = (3, 3, t.size))
+for ii, pair in enumerate(params['pairs']):
+    All_signals[ii] = creating_signals(t, amp, dc, f, pair)
+params['All_signals'] = All_signals
 
-'''
-params['individual'] = np.load('best_ind.npy')
-y , t = obtaindynamicsNET(params, params['tspan'], params['tstep'], 3)
-
-fig = plot3x3(y,t, 'small', params['tstep'])
-plt.show()
-
-
-
-'''
-# This has to go before the if name = main and before running the program.
-
-maxgene = 0.5*C
+# Initiating some of the GA Functions:
+# this has to go before the if name = main and before running the algorithm.
+maxgene = 0.4*C
 mingene = 0
-toolbox, creator = GAlgs.initiate_DEAP(fitness_function_cross, params, generange = (mingene,maxgene), indsize = indivsize)
+toolbox, creator = GAlgs.initiate_DEAP(fitness_function_cross_V2, params, generange = (mingene, maxgene), indsize = indivsize, v = 2)
     
 if __name__ == '__main__':
     last_test = int(os.listdir(path + '/Resultats')[-1])
@@ -69,42 +72,53 @@ if __name__ == '__main__':
 
     print('Actual test: ' + str(testn))
     with Pool(processes= 4) as piscina:
-        num_generations = 40; popsize = 20; mutindprob = 0.5; coprob = 0.5; indsize = indivsize
-        maxfits, avgfits, bestsols = GAlgs.main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, 1, piscina)
+        # GA parameter settings:
+        num_generations = 10; popsize = 10; mutindprob = 0.2; coprob = 0.5; indsize = indivsize
+        # Running GA
+        maxfits, avgfits, bestsols = GAlgs.main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, 1, piscina, v = 2)
+
         # Plot the maximum fitnesses and average fitnesses of each generation
         gens = np.linspace(1,num_generations, num_generations)
-        plt.plot(gens, maxfits)
-        plt.plot(gens, avgfits)
+        plt.plot(gens, maxfits[:,0], label = 'fit0')
+        plt.plot(gens, maxfits[:,1], label = 'fit1')
+        plt.plot(gens, maxfits[:,2], label = 'fit2')
+        plt.plot(gens, avgfits, label = 'avg')
         plt.title('Evolution of fitness')
+        plt.legend(loc = 'best')
         plt.savefig(newfolder + "/fitness.jpg")
         plt.show()
+
         # Obtain the best solution of the population
-        solution = bestsols[np.argmax(maxfits)]
+        maxfits_avg = (maxfits[:,0] + maxfits[:,1] + maxfits[:,2])/3
+        solution = bestsols[np.argmax(maxfits_avg)]
 
-
+        # Show the coupling matrices
         fig = plotcouplings3x3V2(solution, matrix, (mingene, maxgene))
         fig.savefig(newfolder + "/bestweights.jpg")
         plt.show()
         np.save(newfolder + '/best_ind', solution)
+        np.save(newfolder + '/best_ind', params['All_signals'])
 
+        # Show the evolution of the norm of the best solutions as a function of generations
         norms = np.array([np.sum(weight**2) for weight in bestsols])
         plt.plot(gens, norms)
         plt.title('Evolution of the norm of the max fitness weights')
         plt.savefig(newfolder + "/normevol.jpg")
         plt.show()
 
+        # And let's observe the resulting dynamics of the best individual
         solution = np.array(solution)
         params['individual'] = solution
-        # And let's observe the dynamics
-        y , t = obtaindynamicsNET(params, params['tspan'], params['tstep'], 3)
+        for ii in range(3):
+            params['signals'] = params['All_signals'][ii]
+            y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], 3)
 
-        typeplot = 'small'
-        fig = plot3x3(y,t, typeplot, params['tstep'])
-        saving = newfolder + '/Dynamics' + typeplot + '.png'
-        fig.savefig(saving)
-        plt.show()
-        print('Correlation 6 with 7: ' + str(maxcrosscorrelation(y[6], y[7])))
-        print('Correlation 6 with 8: ' + str(maxcrosscorrelation(y[6], y[8])))
-        print('Correlation 7 with 8: ' + str(maxcrosscorrelation(y[7], y[8])))
-
-# Estaria guay que a lo mejor escupiera las diferentes autocorrelaciones para ver porqué son tan parecidas.
+            typeplot = 'small'
+            fig = plot3x3_signals(y,t, typeplot, params['tstep'], params['All_signals'][ii])
+            saving = newfolder + '/Dynamics' + str(ii) + typeplot + '.png'
+            fig.savefig(saving)
+            plt.show()
+            print('Correlation 6 with 7: ' + str(maxcrosscorrelation(y[6], y[7])))
+            print('Correlation 6 with 8: ' + str(maxcrosscorrelation(y[6], y[8])))
+            print('Correlation 7 with 8: ' + str(maxcrosscorrelation(y[7], y[8])))
+        

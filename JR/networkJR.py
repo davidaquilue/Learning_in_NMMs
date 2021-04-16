@@ -1,8 +1,11 @@
-# All necessary functions to obtain the dynamics of a network of Jansen and Rit models of cortical columns
-# functions included: unpackingNET_V1, derivativesNET_V1, couplingval_V1, individual_to_weights, unpackingNET_V2, derivativesNET_V2, 
-# # couplingval_V2, unpackingNET_V3, derivativesNET_V3, HeunNet, obtaindynamicsNET
-import numpy as np; from numba import njit
+''' Necessary functions to obtain the dynamics of a network of Jansen and Rit models of cortical columns.
+
+Functions included: unpackingNET_V1, derivativesNET_V1, couplingval_V1, individual_to_weights, unpackingNET_V2, derivativesNET_V2, 
+couplingval_V2, unpackingNET_V3, derivativesNET_V3, HeunNet, obtaindynamicsNET '''
+
+from numba import njit
 from matfuns import S, networkmatrix
+import numpy as np
 usefastmath = True
 
 # VERSION 1. One excit/inhib parameter per column. In version 2, every connexion in the matrix will have a different value
@@ -103,6 +106,8 @@ def individual_to_weights(individual, matrix):
 
     return weights_exc, weights_inh
 
+# This function will also be modified when taking into account more complicated processes like feedback or long-range excitatory connections.
+
 def unpackingNET_V2(params):
     '''Returns the values of the parameters in the dictionary params in a tuple so that we can work with numba'''
     A, B, v0, a, b, e0, pbar = params['A'],params['B'],params['v0'],params['a'], params['b'], params['e0'], params['pbar']
@@ -168,15 +173,15 @@ def couplingval_V2(inp, row_weights_exc, row_weights_inh, C3, e0, r, v0, nn, tup
     pa = 0
     pb = 0
     # We obtain the contribution of each node.
-    for node,value in enumerate(row_weights_exc):
-        if value != 0:  #by this we have acces to the nodes to which the current node is linked to
-            pa = pa + value*S(inp[node,3]-inp[node,5], e0, r, v0)
-        elif row_weights_inh[node] != 0:
-            pb = pb + row_weights_inh[node]*S(C3*inp[node, 1], e0, r, v0)
+    for node,(value_ex, value_inh) in enumerate(zip(row_weights_exc, row_weights_inh)):
+        if value_ex != 0:  #by this we have acces to the nodes to which the current node is linked to
+            pa = pa + value_ex*S(inp[node,3]-inp[node,5], e0, r, v0)
+        elif value_inh != 0:
+            pb = pb + value_inh*S(C3*inp[node, 1], e0, r, v0)
     return pa,pb
 
 
-# VERSION 3. The excitation comes from a time dependent signal, using as in version 2, a pair of coupling values per connection, thus couplingval_V2 will be used.
+# VERSION 3. The excitation comes from a time dependent signal, sith a pair of coupling values per connection (as in version 2), thus couplingval_V2 will be used.
 def unpackingNET_V3(params):
     '''Returns the values of the parameters in the dictionary params in a tuple so that we can work with numba'''
     A, B, v0, a, b, e0, pbar = params['A'],params['B'],params['v0'],params['a'], params['b'], params['e0'], params['pbar']
@@ -184,12 +189,11 @@ def unpackingNET_V3(params):
     C3, C4, r = params['C3'], params['C4'], params['r'] # JR Model Params
 
     # Network architecture params
-    matrix = params['matrix']
-    Nnodes = params['Nnodes']
-    tuplenetwork = params['tuplenetwork']
-    # It will help with things if forcednode is a tuple of the nodes of the firstlayer like (0,1,2)
-    forcednodes = params['forcednodes']
-    individual = params['individual']
+    matrix = params['matrix'] # Connectivity matrix, if matrix[i,j] = 0 nodes i,j are not connected, if matrix[i,j] means that node j sends an input to node i.
+    Nnodes = params['Nnodes'] # Total number of nodes
+    tuplenetwork = params['tuplenetwork'] # A tuple containing the architecture of the network, in our case: (3,3,3)
+    forcednodes = params['forcednodes'] # A tuple containing the indexes of the input layer, in our case: (0,1,2)
+    individual = params['individual']   # Vector containing the values of the coupling values, through the following line it is converted to two weight matrices.
     weights_exc, weights_inh = individual_to_weights(individual, matrix)
 
     # Signals, that will be built outside the dynamics functions and will have to be the same length as will be the resulting vectors.
@@ -278,7 +282,7 @@ def obtaindynamicsNET(params, tspan, tstep, v):
     params: Dictionary of parameters
     tspan:  Tuple of the type (t_0, t_f)
     tstep:  Timestep
-    v:      Whether version 1 (1 exc/inh coef/node) or version 2 (1 exc/inh coef/connection)
+    v:      Whether version 1 (1 exc/inh coef/node), version 2 (1 exc/inh coef/connection) or version 3 (1 exc/inh coef/connection and squared input signals)
 
     Outputs:
     y1-y2:   Matrix of the kind (N_nodes, tsteps) of the PSPs of pyramidal populations of every node in the network

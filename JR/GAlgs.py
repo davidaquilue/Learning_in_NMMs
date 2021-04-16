@@ -1,10 +1,12 @@
-# Genetic Algorithms. Two modules: PyGAD and DEAP
-# Functions included: initiate_DEAP, main
+'''Genetic Algorithm functions. 
+
+Functions included: initiate_DEAP, main_DEAP'''
 from deap import base, creator, tools
-from tqdm import tqdm; import numpy as np
+from tqdm import tqdm
+import numpy as np
 
 # DEAP Algorithm.
-def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob = 0.05, tmntsize = 3):
+def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob = 0.05, tmntsize = 3, v = 1):
     '''
     Registers the different classes and methods required to run the DEAP genetic algorithm. Basic characteristics of the problem need to be passed:
 
@@ -13,10 +15,14 @@ def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob
     indsize:        The individual size. The amount of genes per individual.
     mutprob:        The probability of mutation of a certain gene once the individual has been chosen to mutate
     tmtnsize:       In the case of tournament selection, the size of the tournament.
+    v:              Version of the GA used. v = 1 works for single output fit funcs. v = 2 works for 3-uple output fit funcs.
 
     One has to make sure that the initiate_DEAP functions is called before the if __name__ == '__main__'. The toolbox has to be registered before that (global scope)
     '''
-    creator.create('FitnessMax', base.Fitness, weights = (1.0,)) # If wanted to minimize, weight negative
+    if v == 1:
+        creator.create('FitnessMax', base.Fitness, weights = (1.0,)) # If wanted to minimize, weight negative
+    elif v == 2:
+        creator.create('FitnessMax', base.Fitness, weights = (1.0, 1.0, 1.1))
     creator.create('Individual', list, fitness = creator.FitnessMax)
 
     toolbox = base.Toolbox()
@@ -28,12 +34,12 @@ def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob
     toolbox.register('evaluate', fitness_func, params) # The evaluation will be performed calling the alias evaluate. It is important to not fix its argument here. 
     toolbox.register('mate', tools.cxTwoPoint)
     toolbox.register('mutate', tools.mutGaussian, mu = (generange[1]- generange[0])/2, sigma = (generange[1]- generange[0])/20,indpb = mutprob) # Real number only mutation. Let's see how it works
-    toolbox.register('select', tools.selTournament, tournsize = 3)
+    toolbox.register('select', tools.selTournament, tournsize = tmntsize)
 
     return toolbox, creator
 
 
-def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, parallel, pool = None):
+def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, parallel, pool = None, v = 2):
     '''
     Runs the DEAP Genetic Algorithm. Main characteristics of the algorithm need to be passed now:
 
@@ -46,6 +52,8 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
     creator:        The DEAP creator class created in the initiate_DEAP function
     parallel:       Boolean indicating if we want to evaluate fitness functions on individuals in a parallel manner
     pool:           The pool of processes in the case that we use parallelization. with Pool(processes = 4) as pool.
+    Version of the GA used. v = 1 works for single output fit funcs. v = 2 works for 3-uple output fit funcs.
+
 
     Outputs:
     bestsols:   An array containing, in each row, the best individual of each generation
@@ -60,9 +68,12 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
     else:
         toolbox.register('map', map)
     
-    bestsols = np.zeros((num_generations, indsize))
-    maxfits = []
+    if v == 1:
+        maxfits = []
+    elif v == 2:
+        maxfits = np.zeros((num_generations, 3))
     avgfits = []
+    bestsols = np.zeros((num_generations, indsize))
     pop = toolbox.population(n = popsize) # pop will be a list of popsize individuals
 
     fitnesses = list(toolbox.map(toolbox.evaluate, pop))
@@ -96,12 +107,23 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
         pop[:] = offspring
 
         # Storing different results
-        fits = np.array([ind.fitness.values[0] for ind in pop])
-        idx = np.argmax(fits)
-        maxfits.append(np.amax(fits))
-        avgfits.append(np.mean(fits))
+        if v == 1: # If version 1, only one value of fitness is returned
+            fits = np.array([ind.fitness.values[0] for ind in pop])
+            idx = np.argmax(fits)
+            maxfits.append(np.amax(fits))
+            avgfits.append(np.mean(fits))
+
+        elif v == 2: # If version 2, three different fitness values are returned
+            fit0 = np.array([ind.fitness.values[0] for ind in pop])
+            fit1 = np.array([ind.fitness.values[1] for ind in pop])
+            fit2 = np.array([ind.fitness.values[2] for ind in pop])
+            fits = (fit0+fit1+fit2)/3
+            idx = np.argmax(fits)
+            maxfits[i,:] = np.array([fit0[idx], fit1[idx], fit2[idx]])
+            avgfits.append(np.mean(fits))
+
         bestsols[i,:] = np.array(pop[idx])
 
     return maxfits, avgfits, bestsols
 
-# PyGAD algorithm.
+# PyGAD algorithm. Not used anymore.

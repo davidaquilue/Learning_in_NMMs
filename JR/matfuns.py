@@ -1,8 +1,11 @@
-# Mathematical functions
-# Functions included: S, autocorr, findpeaks, psd, normalize, regularity, crosscorrelation, maxcrosscorrelation,
-# networkmatrix, findlayer
-import numpy as np
+''' Collection of mathematical and auxiliary functions. 
+
+Functions included: S, autocorr, findpeaks, psd, normalize, regularity, crosscorrelation, maxcrosscorrelation,
+networkmatrix, findlayer, networkmatrix_exc_inh, creating_signals'''
+
 from numba import njit
+from scipy import signal
+import numpy as np
 usefastmath = True
 
 @njit(fastmath = usefastmath)
@@ -18,7 +21,7 @@ def autocorr(x, nintegration = 20000, maxlag = 3, tstep = 0.001):
   '''
   tauvec = np.arange(0,maxlag,tstep) # We obtain the autocorr up to a lag of 3s (should be enough for alpha rhythms).
   acorr = np.zeros_like(tauvec)
-  for ii,tau in enumerate(tauvec):
+  for ii, _ in enumerate(tauvec):
       acorr[ii] = np.sum(x[0:nintegration]*x[ii:nintegration+ii])
   return tauvec, acorr/np.partition(np.abs(acorr),-1)[-1]
 
@@ -32,7 +35,7 @@ def findpeaks(x):
   return peaks
 
 def psd(y,tstep):
-  # Obtains the power density
+  '''Returns power density as a function of frequency of signal y.'''
   power = np.abs(np.fft.fft(y-np.average(y)))**2
   freqs = np.fft.fftfreq(y.size,tstep)
   idx = np.argsort(freqs)
@@ -57,17 +60,19 @@ def regularity(y):
 
 @njit(fastmath = usefastmath)
 def crosscorrelation(y1,y2,nintegration = 10000, maxlag = 5, tstep = 0.001):
+  '''Obtains the crosscorrelation of signals y1, y2 as a function of the lag.'''
   # Both vectors need to have the same length. We take 10 seconds for the integration.
   tauvec = np.arange(0,maxlag,tstep) # We obtain the crosscorrelation up to a lag of 5s (should be enough for alpha rhythms).
   crosscorr = np.zeros_like(tauvec)
 
-  for ii, tau in enumerate(tauvec):
+  for ii, _ in enumerate(tauvec):
       norm_factor = np.sqrt(np.sum(y1[0:nintegration]**2)*np.sum(y2[ii:nintegration+ii]**2)) # Sqrt of the energies of the signals
       crosscorr[ii] = np.sum(y1[0:nintegration]*y2[ii:nintegration+ii])/norm_factor
   return tauvec, crosscorr
 
 @njit(fastmath = usefastmath)
 def maxcrosscorrelation(y1, y2, nintegration = 10000, maxlag = 10, tstep = 0.001):
+  '''Returns the maximum of the correlation after exploring them up to a lag of maxlag'''
   _, crossc = crosscorrelation(y1, y2, nintegration, maxlag, tstep)
   maxcrossc = np.amax(crossc)
   # This next part of code is used to account for numerial imprecision in the multiplications and normalizations. 
@@ -108,10 +113,59 @@ def networkmatrix(tuplenetwork, recurrent):
       matrix = matrix + np.identity(Nnodes)
   return Nnodes, matrix
 
+@njit(fastmath = True)
+def networkmatrix_exc_inh(tuplenetwork, recurrent, v):
+  '''Returns the connectivity matrices of excitation and inhibition, depending on the version. Kinda hard to visualize.'''
+  netvec = np.array(tuplenetwork)
+  
+  Nnodes = np.sum(netvec) # Total number of nodes
+  Nlayers = netvec.size
+  matrix = np.zeros((Nnodes, Nnodes))
+  ii = netvec[0] # Because first layer has no connection, we have to start lower in the matrix.
+  jj = 0
+  for layer in range(Nlayers-1):
+      nout = netvec[layer]
+      nin = netvec[layer+1]
+
+      matrix[ii:ii+nin, jj:jj+nout] = np.ones((nin,nout))
+      
+      ii = ii + nin
+      jj = jj + nout
+  if recurrent:
+      matrix = matrix + np.identity(Nnodes)
+  # v = 0. Original matrices
+  matrix_exc = np.copy(matrix)
+  matrix_inh = np.copy(matrix)
+
+  # v = 1 corresponds to the excitation test. Making pyramidal columns able to excite further than the following layer. This is done by building a triangular excitatory matrix
+  # However we don't want intralayer excitation yet, that's why it is not lower triangular.
+  if v == 1:
+    jin = 0
+    for layer in range(Nlayers-1):
+      jend = jin + netvec[layer]
+      matrix_exc[jend:, jin:jend] = 1
+      jin = jend
+  # v = 2 corresponds to the memory test. Pyramidal columns are able to provide excitatory feedback to the columns in the previous layers.
+  # I wouldn't say that there is feedback to the input columns... Feedback to the directly before, not more
+  elif v == 2 or v == 3:
+    iin = netvec[0]
+    for layer, nodes_layer in enumerate(netvec):
+      if layer == 0:
+        continue
+      else:
+        iend = iin + nodes_layer
+        jin = iend
+        jend = jin + netvec[layer+1]
+        matrix_exc[iin:iend, jin:jend] = 1
+  # v = 3, same as before but now inhibitory feedback connections aswell.
+        if v == 3:
+          matrix_inh[iin:iend, jin:jend] = 1
+        iin = iend
+
+  return Nnodes, matrix_exc, matrix_inh
+
 def findlayer(node, tuplenetwork):
-  # Simple function that takes as inputs a node i and the architecture of the network
-  # With this information it will output the layer at which node i belongs.
-  layers = len(tuplenetwork)
+  '''Finds the layer to which the node corresponds.'''
   layer = 0
   kk = 0
   for nodes in tuplenetwork:
@@ -120,3 +174,33 @@ def findlayer(node, tuplenetwork):
     else:
       kk += nodes
       layer += 1
+
+# Maybe add some small noise? 
+def creating_signals(t, amp, dc, freq, pair_comp):
+    '''
+    Returns three squared signals in a matrix, with dc component = dc, max amplitude = dc+amp and two rows that are complementary
+
+    Inputs:
+    t:          Time vector
+    amp:        Amplitude that will be added to the dc value when the square signal is at +1
+    dc:         Vertical offset of the squared signal.
+    freq:       In hertz, frequency of the squared signal
+    pair_comp:  2-uple defining which of the two rows will be complementary
+
+    Outputs:
+    signals:    (3, t.size) array containing the three signals in each row.  
+    '''
+
+    # Each signal will have a random phase and a random duty period.
+    phase1 = np.random.random(); duty1 = np.random.random()
+    phase2 = np.random.random(); duty2 = np.random.random()
+    # The not complementary is:
+    for ii in range(3):
+        if ii not in pair_comp: non_comp = ii
+    signals = np.zeros(shape = (3, t.size))
+    signals[pair_comp[0]] = dc + amp*(1+signal.square(2*np.pi*(freq*t + phase1), duty1))/2
+    signals[pair_comp[1]] = dc + amp*np.abs(1-(1+signal.square(2*np.pi*(freq*t + phase1), duty1))/2)
+    signals[non_comp] = dc + amp*(1+signal.square(2*np.pi*(freq*t + phase2), duty2))/2
+
+
+    return signals
