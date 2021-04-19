@@ -1,19 +1,16 @@
 '''Main Script. It runs the Genetic Algorithm and Saves the results. Modifications should be
 performed in this module's code.'''
 
-import os
 from multiprocessing import Pool
 import numpy as np
 import matplotlib.pyplot as plt
 
-from matfuns import networkmatrix, maxcrosscorrelation, creating_signals # network_matrix_exc_inh
+from matfuns import networkmatrix, maxcrosscorrelation, creating_signals # network_matrix_exc_inh # This last function will be used later on
 from plotfuns import plotcouplings3x3V2, plot3x3_signals
 from networkJR import obtaindynamicsNET
 from fitfuns import fitness_function_cross_V2
+from filefuns import check_create_results_folder, test_folder
 import galgs
-
-path = os.getcwd
-
 
 # We first determine the paramaters of the JR model
 params = {'A': 3.25, 'B': 22.0, 'v0': 6.0} 
@@ -35,9 +32,11 @@ params['tuplenetwork'] = (3, 3, 3)
 params['recurrent'] = False
 params['forcednodes'] = (0, 1, 2)
 Nnodes, matrix = networkmatrix(params['tuplenetwork'], params['recurrent'])
+
 # For further tests
 # Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v = 0)
 # indivsize = np.count_nonzero(matrix_exc) + np.count_nonzero(matrix_inh)
+
 indivsize = 2*np.count_nonzero(matrix)
 params['Nnodes'] = Nnodes
 params['matrix'] = matrix
@@ -57,27 +56,31 @@ for ii, pair in enumerate(params['pairs']):
     All_signals[ii] = creating_signals(t, amp, dc, f, pair)
 params['All_signals'] = All_signals
 
-# Initiating some of the GA Functions:
+
+############################ GENETIC ALGORITHM PARAMETER SETUP ####################################
+num_generations = 10
+popsize = 10        # Population size
+mutindprob = 0.2    # Probability that an individual undergoes mutation
+coprob = 0.5        # Crossover probability
+maxgene = 0.4*C     # Maximum coupling value of a connection
+mingene = 0         # Minimum coupling value of a connection
+par_processes = 4   # How many cores will be used in order to parallelize the GA.
+
+# Initialization of the necessary GA functions:
 # this has to go before the if name = main and before running the algorithm.
-maxgene = 0.4*C
-mingene = 0
-toolbox, creator = GAlgs.initiate_DEAP(fitness_function_cross_V2, params, generange = (mingene, maxgene), indsize = indivsize, v = 2)
+toolbox, creator = galgs.initiate_DEAP(fitness_function_cross_V2, params, generange = (mingene, maxgene), indsize = indivsize, v = 2)
     
 if __name__ == '__main__':
-    last_test = int(os.listdir(path + '/Resultats')[-1])
-    print('Last Test: ' + str(last_test))
-    testn = last_test + 1
-    newfolder = path + '/Resultats/' + str(testn)
-    os.makedirs(newfolder)
+    # Folder management
+    results_dir = check_create_results_folder()
+    newfolder = test_folder(results_dir)
 
-    print('Actual test: ' + str(testn))
-    with Pool(processes= 4) as piscina:
-        # GA parameter settings:
-        num_generations = 10; popsize = 10; mutindprob = 0.2; coprob = 0.5; indsize = indivsize
+    with Pool(processes= par_processes) as piscina:
         # Running GA
-        maxfits, avgfits, bestsols = GAlgs.main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, 1, piscina, v = 2)
+        maxfits, avgfits, bestsols = galgs.main_DEAP(num_generations, popsize, mutindprob, coprob, indivsize, toolbox, creator, 1, piscina, v = 2)
 
         # Plot the maximum fitnesses and average fitnesses of each generation
+        # ESCRIURE FUNCIO A PLOTFUNS D'AIXO
         gens = np.linspace(1,num_generations, num_generations)
         plt.plot(gens, maxfits[:,0], label = 'fit0')
         plt.plot(gens, maxfits[:,1], label = 'fit1')
@@ -97,7 +100,7 @@ if __name__ == '__main__':
         fig.savefig(newfolder + "/bestweights.jpg")
         plt.show()
         np.save(newfolder + '/best_ind', solution)
-        np.save(newfolder + '/best_ind', params['All_signals'])
+        np.save(newfolder + '/signals', params['All_signals']) # In case we wanted to repeat the dynamics computation
 
         # Show the evolution of the norm of the best solutions as a function of generations
         norms = np.array([np.sum(weight**2) for weight in bestsols])
@@ -111,6 +114,8 @@ if __name__ == '__main__':
         params['individual'] = solution
         for ii in range(3):
             params['signals'] = params['All_signals'][ii]
+            pair = params['pairs'][ii]
+            synch_pair = (Nnodes - params['tuplenetwork'][-1] + pair[0], Nnodes - params['tuplenetwork'][-1] + pair[1])
             y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], 3)
 
             typeplot = 'small'
@@ -118,6 +123,7 @@ if __name__ == '__main__':
             saving = newfolder + '/Dynamics' + str(ii) + typeplot + '.png'
             fig.savefig(saving)
             plt.show()
+            print('\n Nodes %i and %i should be synchronized:' %synch_pair)
             print('Correlation 6 with 7: ' + str(maxcrosscorrelation(y[6], y[7])))
             print('Correlation 6 with 8: ' + str(maxcrosscorrelation(y[6], y[8])))
             print('Correlation 7 with 8: ' + str(maxcrosscorrelation(y[7], y[8])))
