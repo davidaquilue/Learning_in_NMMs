@@ -92,17 +92,20 @@ def couplingval_V1(inp, connections, individual, C3, e0, r, v0, nn, tuplenetwork
 
 
 # VERSION 2. Each connection consists of different excitatory and inhibitory weights
-def individual_to_weights(individual, matrix):
+def individual_to_weights(individual, matrix_exc, matrix_inh):
     '''Individual is transformed into two weight arrays. Individual should have size of 2*np.count_nonzero(matrix)'''
     individual = np.array(individual)
-    halves = np.split(individual, 2)
-    weights_exc = np.zeros_like(matrix)
-    weights_inh = np.zeros_like(matrix)
+    ind_exc_weights = individual[0:len(np.nonzero(matrix_exc)[0])]
+    ind_inh_weights = individual[len(np.nonzero(matrix_exc)[0]):]
 
-    indices = np.nonzero(matrix)
+    weights_exc = np.zeros_like(matrix_exc)
+    weights_inh = np.zeros_like(matrix_inh)
 
-    weights_exc[indices] = halves[0]
-    weights_inh[indices] = halves[1]
+    indices_exc = np.nonzero(matrix_exc)
+    indices_inh = np.nonzero(matrix_inh)
+
+    weights_exc[indices_exc] = ind_exc_weights
+    weights_inh[indices_inh] = ind_inh_weights
 
     return weights_exc, weights_inh
 
@@ -115,12 +118,11 @@ def unpackingNET_V2(params):
     C3, C4, r = params['C3'], params['C4'], params['r'] # JR Model Params
 
     # Network architecture params
-    matrix = params['matrix']
     Nnodes = params['Nnodes']
     tuplenetwork = params['tuplenetwork']
     forcednode = params['forcednode']
     individual = params['individual']
-    weights_exc, weights_inh = individual_to_weights(individual, matrix)
+    weights_exc, weights_inh = individual_to_weights(individual, params['matrix_exc'], params['matrix_inh'])
 
     return (A, B, v0, a, b, e0 , pbar, delta, f, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednode)
 
@@ -189,12 +191,12 @@ def unpackingNET_V3(params):
     C3, C4, r = params['C3'], params['C4'], params['r'] # JR Model Params
 
     # Network architecture params
-    matrix = params['matrix'] # Connectivity matrix, if matrix[i,j] = 0 nodes i,j are not connected, if matrix[i,j] means that node j sends an input to node i.
     Nnodes = params['Nnodes'] # Total number of nodes
     tuplenetwork = params['tuplenetwork'] # A tuple containing the architecture of the network, in our case: (3,3,3)
     forcednodes = params['forcednodes'] # A tuple containing the indexes of the input layer, in our case: (0,1,2)
     individual = params['individual']   # Vector containing the values of the coupling values, through the following line it is converted to two weight matrices.
-    weights_exc, weights_inh = individual_to_weights(individual, matrix)
+    weights_exc, weights_inh = individual_to_weights(individual, params['matrix_exc'], params['matrix_inh']) # Connectivity matrices, if matrix[i,j] = 0 nodes i,j are 
+    # not connected, if matrix[i,j] means that node j sends an input to node i.
 
     # Signals, that will be built outside the dynamics functions and will have to be the same length as will be the resulting vectors.
     signals = params['signals']# shape of (nodesfirstlayer, nsteps)

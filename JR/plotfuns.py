@@ -208,10 +208,10 @@ def plotcouplings3x3(solution):
     return fig
 
 from networkJR import individual_to_weights
-def plotcouplings3x3V2(solution, matrix, maxminvals):
+def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
     ''' Returns an imshow of the excitatory and inhibitory weight matrix. solution is the vector of the individiual with best fitness.'''
     fig, axes = plt.subplots(1, 2)
-    weights_exc, weights_inh = individual_to_weights(solution, matrix)
+    weights_exc, weights_inh = individual_to_weights(solution, matrix_exc, matrix_inh)
     ax = axes[0]
     ax.imshow(weights_exc, vmin = maxminvals[0], vmax = maxminvals[1])
     ax.set_title('Excitatory Coupling Coefficients')

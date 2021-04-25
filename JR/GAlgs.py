@@ -75,7 +75,6 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
     avgfits = []
     bestsols = np.zeros((num_generations, indsize))
     pop = toolbox.population(n = popsize) # pop will be a list of popsize individuals
-
     fitnesses = list(toolbox.map(toolbox.evaluate, pop))
     for ind, fit in zip(pop, fitnesses):
         ind.fitness.values = fit # We store the results in the value of the fitness attribute of the individual class.
@@ -127,3 +126,120 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
     return maxfits, avgfits, bestsols
 
 # PyGAD algorithm. Not used anymore.
+
+def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, parallel, L, pool = None, v = 2):
+    '''
+    Runs the DEAP Genetic Algorithm. Main characteristics of the algorithm need to be passed now:
+
+    num_generations: Number of generations that the GA will run
+    popsize:        Population size for each generation
+    mutindprob:     Probability of selecting an individual for mutation
+    coprob:         Probability of selecting a pair of individuals for crossover
+    indsize:        Size of the individuals (number of genes)
+    toolbox:        The DEAP toolbox created in the initiate_DEAP function
+    creator:        The DEAP creator class created in the initiate_DEAP function
+    parallel:       Boolean indicating if we want to evaluate fitness functions on individuals in a parallel manner
+    L:              Number of generations that have to pass without an increase in the maximal fitness before an extinction
+    pool:           The pool of processes in the case that we use parallelization. with Pool(processes = 4) as pool.
+    Version of the GA used. v = 1 works for single output fit funcs. v = 2 works for 3-uple output fit funcs.
+
+
+    Outputs:
+    bestsols:   An array containing, in each row, the best individual of each generation
+    maxfits:    A list containing the largest fitness in each generation
+    avgfits:    A list containing the average fitness in each generation
+
+    If we are using parallel processing, the with Pool as pool has to be called inside if __name__=='__main__'
+    '''
+    if parallel:
+        
+        toolbox.register('map', pool.map)
+    else:
+        toolbox.register('map', map)
+    
+    if v == 1:
+        maxfits = []
+    elif v == 2:
+        maxfits = np.zeros((num_generations, 3))
+    avgfits = []
+    overall_fit = [] # This is the array that we will use to determine if there is extinction
+    bestsols = np.zeros((num_generations, indsize))
+    pop = toolbox.population(n = popsize) # pop will be a list of popsize individuals
+
+    fitnesses = list(toolbox.map(toolbox.evaluate, pop))
+    for ind, fit in zip(pop, fitnesses):
+        ind.fitness.values = fit # We store the results in the value of the fitness attribute of the individual class.
+
+    for i in tqdm(range(num_generations), desc = 'Genetic Algorithm Running'):
+        # Selection of the best individuals from the previous population
+        offspring = toolbox.select(pop,len(pop))
+        offspring = list(toolbox.map(toolbox.clone, offspring)) 
+
+        # Mutation and crossover
+        for child1, child2 in zip(offspring[::2], offspring[1::2]):
+            if np.random.random() < coprob:
+                toolbox.mate(child1, child2)
+                del child1.fitness.values
+                del child2.fitness.values
+
+        for mutant in offspring:
+            if np.random.random() < mutindprob:
+                toolbox.mutate(mutant)
+                del mutant.fitness.values
+
+        # Now we recalculate the fitness of the newly created offspring
+        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+        for ind, fit in zip(invalid_ind, fitnesses):
+            ind.fitness.values = fit
+
+        # And finally reassign the offspring as the new population:
+        pop[:] = offspring
+
+        # Storing different results
+        if v == 1: # If version 1, only one value of fitness is returned
+            fits = np.array([ind.fitness.values[0] for ind in pop])
+            idx = np.argmax(fits)
+            maxfit = fits[idx]
+            maxfits.append(maxfit)
+            avgfits.append(np.mean(fits))
+
+        elif v == 2: # If version 2, three different fitness values are returned
+            fit0 = np.array([ind.fitness.values[0] for ind in pop])
+            fit1 = np.array([ind.fitness.values[1] for ind in pop])
+            fit2 = np.array([ind.fitness.values[2] for ind in pop])
+            fits = (fit0+fit1+fit2)/3
+            idx = np.argmax(fits)
+            maxfits[i,:] = np.array([fit0[idx], fit1[idx], fit2[idx]])
+            maxfit = fits[idx]
+            avgfits.append(np.mean(fits))
+        
+        overall_fit.append(maxfit)
+        bestsols[i,:] = np.array(pop[idx])
+
+        # Now we check for extinction:
+        extinction_generations = []
+        if i > L:
+            extinction = True
+            for fit in overall_fit[i-L+1:]: # We check if one of the last L-1 best fitnesses is bigger than the fitness L generations before
+                if fit > 1.2*overall_fit[i-L]:
+                    # If only one of the last fitnesses is 20% than the first one of the L before the actual generations, no extinction 
+                    extinction = False
+            
+            if extinction:
+                pop = toolbox.population(n = popsize) # We rewrite the population with newly generated individuals
+                pop[0] = bestsols[i,:]  # But the first of the individuals will be the best solution of the generation before extinction
+                
+                # Same process as before.
+                fitnesses = list(toolbox.map(toolbox.evaluate, pop))
+                for ind, fit in zip(pop, fitnesses):
+                    ind.fitness.values = fit
+
+                extinction_generations.append(i) # In this array we store the generations in which there has been an extinction.
+
+                
+        # if no change in the previous 10 iterations:
+        # pop = use the same algorithm (population bla bla)
+        # pop[0] = bestsols[i,:]
+        # and reevaluate the function, and then again. I would also like to get an array telling me where the different extinctions happen so that the plot looks cooler
+    return maxfits, avgfits, bestsols, extinction_generations
