@@ -36,7 +36,7 @@ params['forcednodes'] = (0, 1, 2)
 #params['matrix'] = matrix
 
 # For further tests
-Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v = 1) # v indicates which of the weight tests one wants to perform
+Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v = 0) # v indicates which of the weight tests one wants to perform
 # (see the function in the matfuns script for further information on the tests)
 indivsize = np.count_nonzero(matrix_exc) + np.count_nonzero(matrix_inh)
 
@@ -61,14 +61,14 @@ params['All_signals'] = All_signals
 
 
 ############################ GENETIC ALGORITHM PARAMETER SETUP ####################################
-num_generations = 5
-popsize = 5        # Population size
+num_generations = 200
+popsize = 38        # Population size
 mutindprob = 0.2    # Probability that an individual undergoes mutation
 coprob = 0.5        # Crossover probability
 maxgene = 0.4*C     # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
-par_processes = 4   # How many cores will be used in order to parallelize the GA.
-
+par_processes = 38  # How many cores will be used in order to parallelize the GA.
+L = 15		    # After how many non-improving generations exctinction occurs
 # Initialization of the necessary GA functions:
 # this has to go before the if name = main and before running the algorithm.
 toolbox, creator = galgs.initiate_DEAP(fitness_function_cross_V2, params, generange = (mingene, maxgene), indsize = indivsize, v = 2)
@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
     with Pool(processes= par_processes) as piscina:
         # Running GA
-        maxfits, avgfits, bestsols, extinction_generations = galgs.main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indivsize, toolbox, creator, 1, L = 15, piscina, v = 2)
+        maxfits, avgfits, bestsols, extinction_generations = galgs.main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indivsize, toolbox, creator, 1, L, piscina, v = 2)
 
         # Plot the maximum fitnesses and average fitnesses of each generation
         # ESCRIURE FUNCIO A PLOTFUNS D'AIXO
@@ -89,6 +89,7 @@ if __name__ == '__main__':
         plt.plot(gens, maxfits[:,1], label = 'fit1')
         plt.plot(gens, maxfits[:,2], label = 'fit2')
         plt.plot(gens, avgfits, label = 'avg')
+        print(extinction_generations)
         for extinction in extinction_generations: plt.axvline(extinction, c = 'k')
         plt.title('Evolution of fitness')
         plt.legend(loc = 'best')

@@ -24,7 +24,6 @@ def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob
     elif v == 2:
         creator.create('FitnessMax', base.Fitness, weights = (1.0, 1.0, 1.1))
     creator.create('Individual', list, fitness = creator.FitnessMax)
-
     toolbox = base.Toolbox()
     # How we generate the genes of each individual:
     toolbox.register('genes', np.random.uniform, generange[0], generange[1])
@@ -221,15 +220,15 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
         extinction_generations = []
         if i > L:
             extinction = True
-            for fit in overall_fit[i-L+1:]: # We check if one of the last L-1 best fitnesses is bigger than the fitness L generations before
-                if fit > 1.2*overall_fit[i-L]:
-                    # If only one of the last fitnesses is 20% than the first one of the L before the actual generations, no extinction 
+            for ffit in overall_fit[i-L+1:]: # We check if one of the last L-1 best fitnesses is bigger than the fitness L generations before
+                if ffit > 1.2*overall_fit[i-L]:
+                    # If only one of the last fitnesses is 20% than the first one of the L before the actual generations, no extinction
                     extinction = False
-            
+
             if extinction:
                 pop = toolbox.population(n = popsize) # We rewrite the population with newly generated individuals
-                pop[0] = bestsols[i,:]  # But the first of the individuals will be the best solution of the generation before extinction
-                
+                pop[0] = creator.Individual(bestsols[i,:].tolist())  # But the first of the individuals will be the best solution of the generation before extinction
+		# It's important to use the creator individual so that it will have the same attributes of before
                 # Same process as before.
                 fitnesses = list(toolbox.map(toolbox.evaluate, pop))
                 for ind, fit in zip(pop, fitnesses):
@@ -237,9 +236,4 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
 
                 extinction_generations.append(i) # In this array we store the generations in which there has been an extinction.
 
-                
-        # if no change in the previous 10 iterations:
-        # pop = use the same algorithm (population bla bla)
-        # pop[0] = bestsols[i,:]
-        # and reevaluate the function, and then again. I would also like to get an array telling me where the different extinctions happen so that the plot looks cooler
     return maxfits, avgfits, bestsols, extinction_generations
