@@ -30,7 +30,7 @@ params['stimulation_mode'] = 1
 # Now we define the network architecture. Always feedforward and we can decide wether we want
 # recurrencies or not
 params['tuplenetwork'] = (3, 3, 3)
-params['recurrent'] = True
+params['recurrent'] = False
 params['forcednodes'] = (0, 1, 2)
 # Nnodes, matrix = networkmatrix(params['tuplenetwork'], params['recurrent'])
 # indivsize = 2*np.count_nonzero(matrix)
@@ -62,11 +62,11 @@ params['All_signals'] = All_signals
 
 
 ############################ GENETIC ALGORITHM PARAMETER SETUP ####################################
-num_generations = 250
+num_generations = 10
 popsize = 38        # Population size
 mutindprob = 0.2    # Probability that an individual undergoes mutation
 coprob = 0.5        # Crossover probability
-maxgene = 0.3*C     # Maximum coupling value of a connection
+maxgene = 0.6*C     # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
 par_processes = 38  # How many cores will be used in order to parallelize the GA.
 L = 15		    # After how many non-improving generations exctinction occurs
@@ -126,6 +126,7 @@ if __name__ == '__main__':
         # And let's observe the resulting dynamics of the best individual
         solution = np.array(solution)
         params['individual'] = solution
+        f = open(newfolder+'/correlation.txt', 'a+')
         for ii in range(3):
             params['signals'] = params['All_signals'][ii]
             pair = params['pairs'][ii]
@@ -147,10 +148,13 @@ if __name__ == '__main__':
                 saving = newfolder + '/Dynamics' + str(ii) + typeplot + '.png'
                 fig2.savefig(saving)
 
-            print('\n Nodes %i and %i should be synchronized:' % synch_pair)
-            print('Correlation 6 with 7: ' + str(maxcrosscorrelation(y[6], y[7])))
-            print('Correlation 6 with 8: ' + str(maxcrosscorrelation(y[6], y[8])))
-            print('Correlation 7 with 8: ' + str(maxcrosscorrelation(y[7], y[8])))
+            f.write('Nodes %i and %i should be synchronized:' % synch_pair)
+            f.write('\nCorrelation 6 with 7: ' + str(maxcrosscorrelation(y[6], y[7])))
+            f.write('\nCorrelation 6 with 8: ' + str(maxcrosscorrelation(y[6], y[8])))
+            f.write('\nCorrelation 7 with 8: ' + str(maxcrosscorrelation(y[7], y[8]))+ '\n \n')
+        f.close()
+        f = open(newfolder+'/correlation.txt', 'r')
+        print(f.read())  # This way we save the results in a .txt file for later
         
         if show:
             plt.show()  # In case there is something wrong with the plt.show() 

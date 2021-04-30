@@ -31,7 +31,3 @@ def test_folder(results_dir):
 
     os.makedirs(test_dir)
     return test_dir
-
-
-
-
