@@ -11,25 +11,30 @@ from itertools import combinations
 # MAIN FITNESS FUNCTION THAT WILL BE USED DURING THE DEVELOPMENT OF THE THESIS
 def fitness_function_cross_V2(params, individual):
     '''This fitness function is multiobjective'''
-    params['individual'] = np.array(individual) # Set of weights
-    nodes_in_lastlayer = params['tuplenetwork'][-1]; idx_nodes_lastlayer = params['Nnodes'] - nodes_in_lastlayer # Indexes for correlation computing
-    fit0 = 0; fit1 = 0; fit2 = 0
+    params['individual'] = np.array(individual)  # Set of weights
+    nodes_in_lastlayer = params['tuplenetwork'][-1] 
+    idx_nodes_lastlayer = params['Nnodes'] - nodes_in_lastlayer # Indexes for correlation computing
+    fit0 = 0 
+    fit1 = 0
+    fit2 = 0
     iters = 5
     for it in range(iters):
-        for ii, (pair,unsync) in enumerate(zip(params['pairs'], params['unsync'])): # Iterating over everyone of the three different combinations
+        for ii, (pair, unsync) in enumerate(zip(params['pairs'], params['unsync'])): # Iterating over everyone of the three different combinations
 
             params['signals'] = params['All_signals'][ii] # Change between the three different sets of signals available. Have to be obtained from outside because of their random description
             y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 3)
 
-            idxcomp1 = idx_nodes_lastlayer + pair[0]; idxcomp2 = idx_nodes_lastlayer + pair[0]; idxunsync = idx_nodes_lastlayer + unsync # More index algebra
+            idxcomp1 = idx_nodes_lastlayer + pair[0]
+            idxcomp2 = idx_nodes_lastlayer + pair[1]
+            idxunsync = idx_nodes_lastlayer + unsync # More index algebra
 
             # Fitness computed for every situation
             if ii == 0:
-                fit0 += maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - (maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
+                fit0 += 3*maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
             elif ii == 1:
-                fit1 += maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - (maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
+                fit1 += 3*maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
             elif ii == 2:
-                fit2 += maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - (maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
+                fit2 += 3*maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
 
     return fit0/iters, fit1/iters, fit2/iters
 
@@ -41,7 +46,7 @@ def fitness_function_reg(params, individual):
     # At the moment, individual are lists.
     individual = np.array(individual)
     params['individual'] = individual
-
+    
     nodes0layer = params['tuplenetwork'][0]; nodeslastlayer = params['tuplenetwork'][-1]
     fit = 0
     regs = np.zeros((3,3)); arraybits = np.zeros((3,3))
@@ -129,7 +134,7 @@ def fitness_function_cross(params, individual):
     itermax = 5
     fit = 0
 
-    #store_crosscorrelations = np.zeros(nodeslastlayer) # Depending on the algorithm we use we might need a vector/array to store
+    # store_crosscorrelations = np.zeros(nodeslastlayer) # Depending on the algorithm we use we might need a vector/array to store
     for it in range(itermax):
         y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 3)
         # Again different behaviours can be stored.
@@ -160,11 +165,11 @@ def fitness_function_psds(params, individual):
             params['forcednode'] = ii
             y,_ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 2)
             for jj in range(nodeslastlayer):
-              nodelastlayer = params['Nnodes'] - nodeslastlayer + jj
-              yy = y[nodelastlayer]
-              f, PSD = psd(yy,params['tstep'])
+                nodelastlayer = params['Nnodes'] - nodeslastlayer + jj
+                yy = y[nodelastlayer]
+                f, PSD = psd(yy,params['tstep'])
               # We obtain the frequency at which the spectral power density is maximal
-              maxFs[ii,jj] = np.abs(f[np.argmax(PSD)])
+                maxFs[ii,jj] = np.abs(f[np.argmax(PSD)])
     # Then we can proceed to the same evaluation af we have done previously, whether differences between nodes or other
     # types of differences. I should think more deeply about these functions  
 
@@ -173,22 +178,22 @@ def fitness_function_psds(params, individual):
 
 # Matrix should be a (nodesfirstlayer,nodeslastlayer)
 def diff_between_driven(matrix):
-  '''The fitness is the accumulated difference between behaviors when driving different nodes'''
-  fit = 0
-  aux = np.arange(0, matrix.shape[0])
-  for idx1, idx2 in combinations(aux,2):
-    fit += np.sum((matrix[idx1]-matrix[idx2])**2)
-  return fit
+    '''The fitness is the accumulated difference between behaviors when driving different nodes'''
+    fit = 0
+    aux = np.arange(0, matrix.shape[0])
+    for idx1, idx2 in combinations(aux,2):
+        fit += np.sum((matrix[idx1]-matrix[idx2])**2)
+        return fit
 
 def diff_between_same(matrix):
-  '''The fitness is the accumulated difference between last layer's nodes when driving one node of the first layer'''
-  fit = 0
-  aux = np.arange(0, matrix.shape[1])
-  for ii in range(matrix.shape[0]):
-    row = matrix[ii]
+    '''The fitness is the accumulated difference between last layer's nodes when driving one node of the first layer'''
+    fit = 0
+    aux = np.arange(0, matrix.shape[1])
+    for ii in range(matrix.shape[0]):
+        row = matrix[ii]
     for idx1, idx2 in combinations(aux,2):
-      fit += (row[idx1]-row[idx2])**2
-  return fit
+        fit += (row[idx1]-row[idx2])**2
+    return fit
 
 # This method might be really susceptible to local minima since differences get quite averaged. Plus, they could be behaving in a same manner for each driven node.
 # Maybe a combination of the two would be a good idea.

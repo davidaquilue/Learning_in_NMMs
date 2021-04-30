@@ -22,7 +22,7 @@ def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob
     if v == 1:
         creator.create('FitnessMax', base.Fitness, weights = (1.0,)) # If wanted to minimize, weight negative
     elif v == 2:
-        creator.create('FitnessMax', base.Fitness, weights = (1.0, 1.0, 1.1))
+        creator.create('FitnessMax', base.Fitness, weights = (1.0, 1.0, 1.0))
     creator.create('Individual', list, fitness = creator.FitnessMax)
     toolbox = base.Toolbox()
     # How we generate the genes of each individual:
@@ -162,10 +162,12 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
         maxfits = np.zeros((num_generations, 3))
     avgfits = []
     overall_fit = [] # This is the array that we will use to determine if there is extinction
+    gens_passed_after_ext = 0
     bestsols = np.zeros((num_generations, indsize))
     pop = toolbox.population(n = popsize) # pop will be a list of popsize individuals
 
     fitnesses = list(toolbox.map(toolbox.evaluate, pop))
+    extinction_generations = []
     for ind, fit in zip(pop, fitnesses):
         ind.fitness.values = fit # We store the results in the value of the fitness attribute of the individual class.
 
@@ -215,19 +217,19 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
         
         overall_fit.append(maxfit)
         bestsols[i,:] = np.array(pop[idx])
+        gens_passed_after_ext += 1
 
         # Now we check for extinction:
-        extinction_generations = []
-        if i > L:
+        if gens_passed_after_ext  > L:
             extinction = True
-            for ffit in overall_fit[i-L+1:]: # We check if one of the last L-1 best fitnesses is bigger than the fitness L generations before
-                if ffit > 1.2*overall_fit[i-L]:
+            for ffit in overall_fit[i-L+1:]:# We check if one of the last L-1 best fitnesses is bigger than the fitness L generations before
+                if ffit > 1.1*overall_fit[i-L]:
                     # If only one of the last fitnesses is 20% than the first one of the L before the actual generations, no extinction
                     extinction = False
 
             if extinction:
                 pop = toolbox.population(n = popsize) # We rewrite the population with newly generated individuals
-                pop[0] = creator.Individual(bestsols[i,:].tolist())  # But the first of the individuals will be the best solution of the generation before extinction
+                pop[0] = creator.Individual(bestsols[i, :].tolist())  # But the first of the individuals will be the best solution of the generation before extinction
 		# It's important to use the creator individual so that it will have the same attributes of before
                 # Same process as before.
                 fitnesses = list(toolbox.map(toolbox.evaluate, pop))
@@ -235,5 +237,7 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
                     ind.fitness.values = fit
 
                 extinction_generations.append(i) # In this array we store the generations in which there has been an extinction.
+                gens_passed_after_ext = 0
+
 
     return maxfits, avgfits, bestsols, extinction_generations

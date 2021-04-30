@@ -18,6 +18,12 @@ def plot3x3(y,t, span, tstep):
     Inputs:
     y:      Vector shaped (N_nodes, nsteps) where y[i,nsteps] represents the PSP of the pyramidal population of column i
     t:      Time vector
+                fig0 = plot3x3_signals(y,t, typeplot, params['tstep'], params['All_signals'][ii])
+                saving = newfolder + '/Dynamics' + str(ii) + typeplot + '.png'
+                fig.savefig(saving)
+                fig0 = plot3x3_signals(y,t, typeplot, params['tstep'], params['All_signals'][ii])
+                saving = newfolder + '/Dynamics' + str(ii) + typeplot + '.png'
+                fig.savefig(saving)
     span:   If 'large', 7 seconds of dynamics are presented, if 'small', 3 seconds. Enough for alpha rhythms
     tstep:  Timestep in the simulations, used to obtain the maxima of PSD of each node.
     '''
@@ -67,7 +73,6 @@ def plot3x3(y,t, span, tstep):
             ax.tick_params(labelsize = labelticksize)
 
     plt.tight_layout()
-    plt.show()
     # So that we can save it if we want:
     return fig
 
@@ -136,7 +141,6 @@ def plot3x3_signals(y,t, span, tstep, signals):
             ax.tick_params(labelsize = labelticksize)
 
     plt.tight_layout()
-    plt.show()
     # So that we can save it if we want:
     return fig
 
@@ -179,7 +183,6 @@ def plotanynet(y, t, span, tuplenetwork):
         ax.tick_params(labelsize = labelticksize)
     
     plt.tight_layout()
-    plt.show()
     # If we want to save the figure:
     return fig
 
@@ -203,8 +206,6 @@ def plotcouplings3x3(solution):
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(im, cax=cbar_ax)
-
-    plt.show()
     return fig
 
 from networkJR import individual_to_weights
@@ -226,6 +227,5 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(im, cax=cbar_ax)
 
-    plt.show()
     return fig  
 
