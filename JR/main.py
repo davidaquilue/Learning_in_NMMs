@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 from matfuns import networkmatrix, maxcrosscorrelation, creating_signals, networkmatrix_exc_inh  # This last function will be used later on
-from plotfuns import plotcouplings3x3V2, plot3x3_signals
+from plotfuns import plotcouplings3x3V2, plot3x3_signals, plot_genfit, plotanynet, plotinputsoutputs
 from networkJR import obtaindynamicsNET
 from fitfuns import fitness_function_cross_V2 
 from filefuns import check_create_results_folder, test_folder
@@ -62,13 +62,13 @@ params['All_signals'] = All_signals
 
 
 ############################ GENETIC ALGORITHM PARAMETER SETUP ####################################
-num_generations = 10
-popsize = 38        # Population size
+num_generations = 5
+popsize = 4        # Population size
 mutindprob = 0.2    # Probability that an individual undergoes mutation
 coprob = 0.5        # Crossover probability
 maxgene = 0.6*C     # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
-par_processes = 38  # How many cores will be used in order to parallelize the GA.
+par_processes = 4  # How many cores will be used in order to parallelize the GA.
 L = 15		    # After how many non-improving generations exctinction occurs
 # Initialization of the necessary GA functions:
 # this has to go before the if name = main and before running the algorithm.
@@ -82,48 +82,23 @@ if __name__ == '__main__':
     with Pool(processes=par_processes) as piscina:
         # Running GA
         maxfits, avgfits, bestsols, extinction_generations = galgs.main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indivsize, toolbox, creator, 1, L, piscina, v = 2)
-        import os
-        show = True
-        if "DISPLAY" not in os.environ:  # If no display detected just save
-            show = False
-            matplotlib.use('Agg')
+        maxfits_avg = np.mean(maxfits, axis = 1)  # Mean of the different fitnesses
+        best_indivs_gen = np.argmax(maxfits_avg)  # Generation of the optimal individual
+        solution = bestsols[best_indivs_gen]  # Optimal individual
 
         # Plot the maximum fitnesses and average fitnesses of each generation
-        # ESCRIURE FUNCIO A PLOTFUNS D'AIXO
-        gens = np.linspace(1, num_generations, num_generations)
-        maxfits_avg = (maxfits[:, 0] + maxfits[:, 1] + maxfits[:, 2])/3
-        solution = bestsols[np.argmax(maxfits_avg)]
-        plt.figure(fig_idx)
-        fig_idx += 1  # The main reason for these two lines of code is to save
-        # the figures even when there is no display and the plt.show() results
-        # in error
-        plt.plot(gens, maxfits[:, 0], label='fit0')
-        plt.plot(gens, maxfits[:, 1], label='fit1')
-        plt.plot(gens, maxfits[:, 2], label='fit2')
-        plt.plot(gens, avgfits, label='avg')
-        plt.axvline(gens[np.argmax(maxfits_avg)], c='r')
-        print(extinction_generations)
-        for extinction in extinction_generations: plt.axvline(extinction, c='k')
-        plt.title('Evolution of fitness')
-        plt.legend(loc='best')
-        plt.savefig(newfolder + "/fitness.jpg")
+        fig_genfit = plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_generations, v = 2)
+        fig_genfit.savefig(newfolder + "/fitness.jpg")
         
-        # Obtain the best solution of the population
-        # Show the coupling matrices
-        fig = plotcouplings3x3V2(solution, params['matrix_exc'], params['matrix_inh'], (mingene, maxgene))
-        fig.savefig(newfolder + "/bestweights.jpg")
+        # Show the coupling matrices corresponding to the best individual of the evolution
+        fig_couplings = plotcouplings3x3V2(solution, params['matrix_exc'], params['matrix_inh'], (mingene, maxgene))
+        fig_couplings.savefig(newfolder + "/bestweights.jpg")
+
+        # Save some variables for repetition
         np.save(newfolder + '/best_ind', solution)
-        np.save(newfolder + '/signals', params['All_signals'])  # In case we wanted to repeat the dynamics computation
+        np.save(newfolder + '/signals', params['All_signals'])  # In case we wanted to repeat the dynamics computation        
 
-        # Show the evolution of the norm of the best solutions as a function of generations
-        norms = np.array([np.sum(weight**2) for weight in bestsols])
-        plt.figure(fig_idx)
-        fig_idx += 1
-        plt.plot(gens, norms)
-        plt.title('Evolution of the norm of the max fitness weights')
-        plt.savefig(newfolder + "/normevol.jpg")
-
-        # And let's observe the resulting dynamics of the best individual
+        # Resulting dynamics of the individual and crosscorrelations of last layers dynamics
         solution = np.array(solution)
         params['individual'] = solution
         f = open(newfolder+'/correlation.txt', 'a+')
@@ -132,23 +107,23 @@ if __name__ == '__main__':
             pair = params['pairs'][ii]
             synch_pair = (Nnodes - params['tuplenetwork'][-1] + pair[0], Nnodes - params['tuplenetwork'][-1] + pair[1])
             y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], 3)
-
             typeplot = 'small'
-            if ii == 0:
-                fig0 = plot3x3_signals(y, t, typeplot, params['tstep'], params['All_signals'][ii])
-                saving = newfolder + '/Dynamics' + str(ii) + typeplot + '.png'
-                fig0.savefig(saving)
 
+            saving = newfolder + '/Dynamics' + str(ii) + typeplot + '.png'
+            if ii == 0:
+                #fig0 = plot3x3_signals(y, t, typeplot, params['tstep'], params['All_signals'][ii])
+                fig0 = plotinputsoutputs(y, t, typeplot, params, True, params['signals'])
+                fig0.savefig(saving)
             elif ii == 1:
-                fig1 = plot3x3_signals(y, t, typeplot, params['tstep'], params['All_signals'][ii])
-                saving = newfolder + '/Dynamics' + str(ii) + typeplot + '.png'
+                #fig1 = plot3x3_signals(y, t, typeplot, params['tstep'], params['signals'])
+                fig1= plotanynet(y, t, typeplot, params, True, params['signals'])
                 fig1.savefig(saving)
             else:
-                fig2 = plot3x3_signals(y, t, typeplot, params['tstep'], params['All_signals'][ii])
-                saving = newfolder + '/Dynamics' + str(ii) + typeplot + '.png'
+                #fig2 = plot3x3_signals(y, t, typeplot, params['tstep'], params['signals'])
+                fig2 = plotanynet(y, t, typeplot, params, True, params['signals'])
                 fig2.savefig(saving)
 
-            f.write('Nodes %i and %i should be synchronized:' % synch_pair)
+            f.write('Nodes %i and %i should be synchronized:' % synch_pair)  #Saving results in file
             f.write('\nCorrelation 6 with 7: ' + str(maxcrosscorrelation(y[6], y[7])))
             f.write('\nCorrelation 6 with 8: ' + str(maxcrosscorrelation(y[6], y[8])))
             f.write('\nCorrelation 7 with 8: ' + str(maxcrosscorrelation(y[7], y[8]))+ '\n \n')
@@ -156,12 +131,4 @@ if __name__ == '__main__':
         f = open(newfolder+'/correlation.txt', 'r')
         print(f.read())  # This way we save the results in a .txt file for later
         
-        if show:
-            plt.show()  # In case there is something wrong with the plt.show() 
-            # command. However, it does not raise an error when it can't connect
-            # to a display when the session is detached. 
-            # Just try to have the session attached and internet connection befo
-            # re the algorithm finishes. Couldn't do anything else
-        else:
-            print('Graphics have not been printed but they have been saved in folder ' + str(newfolder))
-
+        plt.show()

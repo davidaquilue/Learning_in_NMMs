@@ -2,7 +2,7 @@
 
 Functions included: fitness_function_cross_V2, fitness_function_reg, fitness_functions_amps, 
 fitness_functions_cross, fitness_functions_psds and complementary functions'''
-from matfuns import S, psd, normalize, regularity, networkmatrix, crosscorrelation, maxcrosscorrelation
+from matfuns import S, psd, normalize, regularity, networkmatrix, crosscorrelation, maxcrosscorrelation, fastcrosscorrelation
 from plotfuns import plot3x3, plotanynet, plotcouplings3x3
 from networkJR import obtaindynamicsNET
 import numpy as np; from numba import njit
@@ -29,12 +29,20 @@ def fitness_function_cross_V2(params, individual):
             idxunsync = idx_nodes_lastlayer + unsync # More index algebra
 
             # Fitness computed for every situation
+            '''
             if ii == 0:
                 fit0 += 3*maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
             elif ii == 1:
                 fit1 += 3*maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
             elif ii == 2:
                 fit2 += 3*maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
+            '''
+            if ii == 0:
+                fit0 += 3*fastcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(fastcrosscorrelation(y[idxcomp1], y[idxunsync]) + fastcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
+            elif ii == 1:
+                fit1 += 3*fastcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(fastcrosscorrelation(y[idxcomp1], y[idxunsync]) + fastcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
+            elif ii == 2:
+                fit2 += 3*fastcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(fastcrosscorrelation(y[idxcomp1], y[idxunsync]) + fastcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
 
     return fit0/iters, fit1/iters, fit2/iters
 

@@ -1,7 +1,7 @@
 ''' Collection of mathematical and auxiliary functions. 
 
 Functions included: S, autocorr, findpeaks, psd, normalize, regularity, crosscorrelation, maxcrosscorrelation,
-networkmatrix, findlayer, networkmatrix_exc_inh, creating_signals'''
+fastcrosscorrelation, networkmatrix, findlayer, networkmatrix_exc_inh, creating_signals'''
 
 from numba import njit
 from scipy import signal
@@ -68,7 +68,16 @@ def crosscorrelation(y1,y2,nintegration = 10000, maxlag = 5, tstep = 0.001):
   for ii, _ in enumerate(tauvec):
       norm_factor = np.sqrt(np.sum(y1[0:nintegration]**2)*np.sum(y2[ii:nintegration+ii]**2)) # Sqrt of the energies of the signals
       crosscorr[ii] = np.sum(y1[0:nintegration]*y2[ii:nintegration+ii])/norm_factor
-  return tauvec, crosscorr
+  return tauvec, crosscorr  
+
+@njit(fastmath = usefastmath)
+def fastcrosscorrelation(y1, y2, nintegration = 10000):
+  '''Obtains the 0-lag crosscorrelation between two functions. Interesting for synchronization'''
+  yy1 = normalize(y1)
+  yy2 = normalize(y2)  # In order for the crosscorrelation to be between -1 and 1
+  norm_factor = np.sqrt(np.sum(yy1[0:nintegration]**2)*np.sum(yy2[0:nintegration]**2))
+  crossc = np.sum(yy1[0:nintegration]*yy2[0:nintegration])/norm_factor
+  return np.abs(crossc) # We return the abs for now, this does not define the correct mathematical function at the moment
 
 @njit(fastmath = usefastmath)
 def maxcrosscorrelation(y1, y2, nintegration = 10000, maxlag = 10, tstep = 0.001):
@@ -84,7 +93,6 @@ def maxcrosscorrelation(y1, y2, nintegration = 10000, maxlag = 10, tstep = 0.001
       return 1
     else:
       return maxcrossc
-
     
 @njit(fastmath = usefastmath)
 def networkmatrix(tuplenetwork, recurrent):
