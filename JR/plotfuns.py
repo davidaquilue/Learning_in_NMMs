@@ -3,6 +3,8 @@
 Functions included: plot3x3, plot3x3_signals, plotanynet, plotcouplings3x3, plotcouplings3x3V2, plotgenfit,
 plot_bestind_normevol '''
 
+#import matplotlib
+#matplotlib.use('Agg')
 from matplotlib import cm
 from matfuns import psd, findlayer
 import numpy as np
@@ -188,7 +190,6 @@ def plotanynet(y, t, span, params, bool_sig, signals):
     for ii in range(Nnodes):
         if rr == nodesperlayer:
             cc += 1; rr = 0
-            print(cc, rr)
         ax = axes[rr,cc]
         yy = y[ii]
         layerii = findlayer(ii,tuplenetwork)
@@ -296,7 +297,7 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
 def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_generations = [], v = 1):
     '''Returns the plot of the highest and average fitnesses per generation. Additionally 
     indicates extinctions and the best individual's fitnesses'''
-    fig, ax = plt.subplots(1,1)
+    fig, ax = plt.subplots(1,1, figsize = (18,9))
 
     gens = np.arange(0, num_generations)
     if v == 1:
@@ -316,17 +317,53 @@ def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_g
     ax.set_title('Evolution of fitness')
     ax.set_xlabel('Generations')
     ax.set_ylabel('Fitness')
-    ax.legend(loc='best')
-
+    ax.legend(bbox_to_anchor = (1.04,1), borderaxespad=0)
+    plt.tight_layout()
     return fig
 
-def plot_bestind_normevol(bestsols, num_generations):
+def plot_bestind_normevol(bestsols, num_generations, params):
+    # MODIFY THIS FUNCTION TO SHOW THE DIFFERENCES BETWEEN EXCITATORY AND INHI
+    # BITORY NORMS!!! 
     ''' Returns the evolution of the norm of the best individual in each generation.'''
     fig, ax = plt.subplots(1,1)
+    len_exc = np.count_nonzero(params['matrix_exc'])
     gens = np.arange(0, num_generations)
-    norms = np.array([np.sum(weight**2) for weight in bestsols])
-    ax.plot(gens, norms)
+    norms_exc = np.array([np.sum(weight[0:len_exc]**2) for weight in bestsols])
+    norms_inh = np.array([np.sum(weight[len_exc:]**2) for weight in bestsols])
+    
+    ax.plot(gens, norms_exc, label='Norm of all excitatory weights')
+    ax.plot(gens, norms_inh, label='Norm of all inhibitory weights')
+
     ax.set_title('Norm of the best individual for each generation')
     ax.set_ylabel('Norm')
     ax.set_xlabel('Generations')
+    ax.legend(loc='best')
     return fig
+
+def plot_sigsingleJR(t, y, signal):
+    '''Returns the dynamics of the signal and a single JR column in the same
+    plot. y and signal should have equivalent sizes.'''
+    xspan = (t[-10000], t[-1])
+    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(18,9))
+    for ii in range(signal.shape[0]):
+        ax = axes[ii, 0]
+        ax.plot(t, signal[ii,:], 'k')
+        ax.set(xlabel='s', ylabel='Hz', title='Input signal', xlim=xspan,
+               ylim=(70, 200))
+    for ii in range(y.shape[0]): # y is output as a column vector, fuck 1d
+        ax = axes[ii, 1]
+        ax.plot(t, y[ii,:], 'r')
+        ax.set(xlabel='s', ylabel='mV', title='JR dynamics', xlim=xspan,
+               ylim=(-8, 20))
+    plt.tight_layout()
+    return fig
+
+def plot_inputs(y, signals, params, t, newfolder):
+    inputnodes = params['tuplenetwork'][0]
+    for ii in range(inputnodes):
+        fig, axes = plt.subplots(2, 1, figsize=(20,10))
+        axes[0].plot(t, signals[ii], 'k')
+        axes[1].plot(t, y[ii], 'r')
+        axes[1].set(ylim = (5,10))
+        fig.savefig(newfolder + '/inputs_' + str(ii))
+    

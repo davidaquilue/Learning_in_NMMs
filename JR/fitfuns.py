@@ -5,10 +5,45 @@ fitness_functions_cross, fitness_functions_psds and complementary functions'''
 from matfuns import S, psd, normalize, regularity, networkmatrix, crosscorrelation, maxcrosscorrelation, fastcrosscorrelation
 from plotfuns import plot3x3, plotanynet, plotcouplings3x3
 from networkJR import obtaindynamicsNET
-import numpy as np; from numba import njit
+import numpy as np
+from numba import njit
 from itertools import combinations
 
 # MAIN FITNESS FUNCTION THAT WILL BE USED DURING THE DEVELOPMENT OF THE THESIS
+def fit_func_cross_V3(params, individual):
+    params['individual'] = np.array(individual)  # Set of weights
+    dataset = params['train_dataset']
+    nodes_in_lastlayer = params['tuplenetwork'][-1]
+    idx_nodes_lastlayer = params['Nnodes'] - nodes_in_lastlayer
+
+    fit0 = 0
+    fit1 = 0
+    fit2 = 0
+    for ii, (pair, unsync) in enumerate(zip(params['pairs'], params['unsync'])):
+        idxcomp1 = idx_nodes_lastlayer + pair[0]
+        idxcomp2 = idx_nodes_lastlayer + pair[1]
+        idxunsync = idx_nodes_lastlayer + unsync  # Idxs for the output layer
+        
+        for nn in range(params['n']):
+            params['signals'] = dataset[ii][nn]  # Extract the one needed from the dataset
+            y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
+            cc0 = fastcrosscorrelation(y[idxcomp1], y[idxcomp2], 30000)
+            cc1 = fastcrosscorrelation(y[idxcomp1], y[idxunsync], 30000)
+            cc2 = fastcrosscorrelation(y[idxunsync], y[idxcomp2], 30000)
+
+            if ii == 0:
+                fit1 += cc0 - (cc1 + cc2)/2
+            elif ii == 1:
+                fit0 += cc0 - (cc1 + cc2)/2
+            else:
+                fit2 += cc0 - (cc1 + cc2)/2
+
+    return fit0/params['n'], fit1/params['n'], fit2/params['n']
+
+
+
+
+
 def fitness_function_cross_V2(params, individual):
     '''This fitness function is multiobjective'''
     params['individual'] = np.array(individual)  # Set of weights
@@ -17,9 +52,9 @@ def fitness_function_cross_V2(params, individual):
     fit0 = 0 
     fit1 = 0
     fit2 = 0
-    iters = 5
+    iters = 3
     for it in range(iters):
-        for ii, (pair, unsync) in enumerate(zip(params['pairs'], params['unsync'])): # Iterating over everyone of the three different combinations
+        for ii, (pair, unsync) in enumerate(zip(params['pairs'][0:2], params['unsync'][0:2])): # Iterating over everyone of the three different combinations
 
             params['signals'] = params['All_signals'][ii] # Change between the three different sets of signals available. Have to be obtained from outside because of their random description
             y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v = 3)
@@ -28,25 +63,14 @@ def fitness_function_cross_V2(params, individual):
             idxcomp2 = idx_nodes_lastlayer + pair[1]
             idxunsync = idx_nodes_lastlayer + unsync # More index algebra
 
-            # Fitness computed for every situation
-            '''
-            if ii == 0:
-                fit0 += 3*maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
-            elif ii == 1:
-                fit1 += 3*maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
-            elif ii == 2:
-                fit2 += 3*maxcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(maxcrosscorrelation(y[idxcomp1], y[idxunsync]) + maxcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
-            '''
-            if ii == 0:
-                fit0 += 3*fastcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(fastcrosscorrelation(y[idxcomp1], y[idxunsync]) + fastcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
-            elif ii == 1:
-                fit1 += 3*fastcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(fastcrosscorrelation(y[idxcomp1], y[idxunsync]) + fastcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
-            elif ii == 2:
-                fit2 += 3*fastcrosscorrelation(y[idxcomp1], y[idxcomp2]) - 2*(fastcrosscorrelation(y[idxcomp1], y[idxunsync]) + fastcrosscorrelation(y[idxcomp2], y[idxunsync]))/2
+            cc0 = fastcrosscorrelation(y[idxcomp1], y[idxcomp2], 20000)
+            cc1 = fastcrosscorrelation(y[idxcomp1], y[idxunsync], 20000)
+            cc2 = fastcrosscorrelation(y[idxunsync], y[idxcomp2], 20000)
+            
+            fit0 += cc0 - cc1 - cc2
 
-    return fit0/iters, fit1/iters, fit2/iters
-
-
+    return fit0/iters, fit1/iters, 0
+                                                                                                                                
 # OTHER FITNESS FUNCTIONS USED DURING THE EXPLORATION OF POSSIBILITIES (can be ignored for the moment)
 
 # USING REGULARITIES TO ENCODE INFORMATION 

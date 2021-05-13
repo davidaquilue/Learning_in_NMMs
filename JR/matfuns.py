@@ -172,6 +172,7 @@ def networkmatrix_exc_inh(tuplenetwork, recurrent, v):
 
   return Nnodes, matrix_exc, matrix_inh
 
+@njit(fastmath = True)
 def findlayer(node, tuplenetwork):
   '''Finds the layer to which the node corresponds.'''
   layer = 0
@@ -200,8 +201,10 @@ def creating_signals(t, amp, dc, freq, pair_comp):
     '''
 
     # Each signal will have a random phase and a random duty period.
-    phase1 = np.random.random(); duty1 = np.random.random()
-    phase2 = np.random.random(); duty2 = np.random.random()
+    #phase1 = np.random.random(); duty1 = np.random.random()
+    #phase2 = np.random.random(); duty2 = np.random.random()
+    phase1 = 0; duty1 = 0.5
+    phase2 = np.pi/2; duty2 = 0.1
     # The not complementary is:
     for ii in range(3):
         if ii not in pair_comp: non_comp = ii

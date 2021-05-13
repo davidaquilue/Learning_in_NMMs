@@ -3,6 +3,10 @@
 Functions included: initiate_DEAP, main_DEAP'''
 from deap import base, creator, tools
 from tqdm import tqdm
+from matfuns import fastcrosscorrelation as ccross
+from networkJR import obtaindynamicsNET
+from plotfuns import plotanynet, plotinputsoutputs
+import matplotlib.pyplot as plt
 import numpy as np
 
 # DEAP Algorithm.
@@ -32,8 +36,10 @@ def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob
 
     toolbox.register('evaluate', fitness_func, params) # The evaluation will be performed calling the alias evaluate. It is important to not fix its argument here. 
     toolbox.register('mate', tools.cxTwoPoint)
-    toolbox.register('mutate', tools.mutGaussian, mu = (generange[1]- generange[0])/2, sigma = (generange[1]- generange[0])/20,indpb = mutprob) # Real number only mutation. Let's see how it works
-    toolbox.register('select', tools.selTournament, tournsize = tmntsize)
+    toolbox.register('mutate', tools.mutGaussian, 
+                     mu=(generange[1] - generange[0])/2, 
+                     sigma=(generange[1] - generange[0])/20, indpb=mutprob)  # Real number only mutation. Let's see how it works
+    toolbox.register('select', tools.selTournament, tournsize=tmntsize)
 
     return toolbox, creator
 
@@ -105,28 +111,28 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
         pop[:] = offspring
 
         # Storing different results
-        if v == 1: # If version 1, only one value of fitness is returned
+        if v == 1:  # If version 1, only one value of fitness is returned
             fits = np.array([ind.fitness.values[0] for ind in pop])
             idx = np.argmax(fits)
             maxfits.append(np.amax(fits))
             avgfits.append(np.mean(fits))
 
-        elif v == 2: # If version 2, three different fitness values are returned
+        elif v == 2:  # If version 2, three different fitness values are returned
             fit0 = np.array([ind.fitness.values[0] for ind in pop])
             fit1 = np.array([ind.fitness.values[1] for ind in pop])
             fit2 = np.array([ind.fitness.values[2] for ind in pop])
             fits = (fit0+fit1+fit2)/3
             idx = np.argmax(fits)
-            maxfits[i,:] = np.array([fit0[idx], fit1[idx], fit2[idx]])
+            maxfits[i, :] = np.array([fit0[idx], fit1[idx], fit2[idx]])
             avgfits.append(np.mean(fits))
 
-        bestsols[i,:] = np.array(pop[idx])
+        bestsols[i, :] = np.array(pop[idx])
 
     return maxfits, avgfits, bestsols
 
 # PyGAD algorithm. Not used anymore.
 
-def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, parallel, L, pool = None, v = 2):
+def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, parallel, L, pool=None, v=2):
     '''
     Runs the DEAP Genetic Algorithm. Main characteristics of the algorithm need to be passed now:
 
@@ -223,7 +229,7 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
         if gens_passed_after_ext  > L:
             extinction = True
             for ffit in overall_fit[i-L+1:]:# We check if one of the last L-1 best fitnesses is bigger than the fitness L generations before
-                if ffit > 1.1*overall_fit[i-L]:
+                if ffit > 1.2*overall_fit[i-L]:
                     # If only one of the last fitnesses is 20% than the first one of the L before the actual generations, no extinction
                     extinction = False
 
@@ -241,3 +247,52 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
 
 
     return maxfits, avgfits, bestsols, extinction_generations
+
+
+def test_solution(params, newfolder, whatplot='inout', rangeplot ='large'):
+    '''This function obtains the dynamics from the testing set and plots
+    some of the dynamics. It also prints and saves the correlations between
+    the output nodes which will indicate if the solution has been able 
+    to learn.'''
+    f = open(newfolder+'/correlation.txt', 'a+')
+    outpairs = params['output_pairs']
+
+    if whatplot == 'inout':
+        pltfun = plotinputsoutputs
+    elif whatplot == 'any':
+        pltfun = plotanynet
+    else:
+        print('Select a valid whatplot string.')
+
+    # First of all print the output correlations and whether the learning
+    # process was a success or a fail.
+    for ii, synch_pair in enumerate(outpairs):
+        # Iterate over evey pair of signals
+        saving = newfolder + '/Dynamics' + str(ii) + rangeplot + '.png'
+
+        for nn, signalsforpair in enumerate(params['test_dataset'][ii]):
+            # Iterate over every set of signals for the actual pair
+            f.write('%i pair, %i element in the set: \n' % (ii, nn))
+            params['signals'] = signalsforpair
+            y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], 3)
+
+            f.write('Nodes %i and %i should be synchronized:' % synch_pair)  #Saving results in file
+            f.write('\nCorrelation %i with %i: ' % outpairs[0] + str(ccross(y[outpairs[0][0]], y[outpairs[0][1]])))
+            f.write('\nCorrelation %i with %i: ' % outpairs[1] + str(ccross(y[outpairs[1][0]], y[outpairs[1][1]])))
+            f.write('\nCorrelation %i with %i: ' % outpairs[2] + str(ccross(y[outpairs[2][0]], y[outpairs[2][1]])) + '\n \n') 
+
+    # Then obtain the plots from the last element of the dataset. Maybe it
+    # would be better to obtain the plot of the better classified element...
+        if ii == 0:
+            fig0 = pltfun(y, t, rangeplot, params, True, params['signals'])
+            fig0.savefig(saving)
+        elif ii == 1:
+            fig1 = pltfun(y, t, rangeplot, params, True, params['signals'])
+            fig1.savefig(saving)
+        else:
+            fig2 = pltfun(y, t, rangeplot, params, True, params['signals'])
+            fig2.savefig(saving)
+    f.close()
+    f = open(newfolder+'/correlation.txt', 'r')
+    print(f.read())  # This way we save the results in a .txt file for later
+    plt.show()

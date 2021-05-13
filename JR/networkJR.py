@@ -213,12 +213,12 @@ def derivativesNET_V3(inp, t, paramtup, n):
     Output:
     dz:     A (N_nodes,6) matrix, containing all the derivatives of the variables.
     '''
-    A, B, v0, a, b, e0 , pbar, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednodes, signals = paramtup
+    A, B, v0, a, b, e0, pbar, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednodes, signals = paramtup
     # Now the input will be a matrix where each row i corresponds to the variables (z0,y0,z1,y1,z2,y2) of each node i.
     dz = np.zeros_like(inp)
     # Now we obtain the derivatives of every variable for every node.
     for nn in range(Nnodes):
-        x = inp[nn] # This will extract the row corresponding to each node.
+        x = inp[nn]  # This will extract the row corresponding to each node.
         z0 = x[0]
         y0 = x[1]
         z1 = x[2]
