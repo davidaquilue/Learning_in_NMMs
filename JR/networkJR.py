@@ -21,7 +21,7 @@ def unpackingNET_V1(params):
     tuplenetwork = params['tuplenetwork']
     forcednode = params['forcednode']
     individual = params['individual']
-    return (A, B, v0, a, b, e0 , pbar, delta, f, C1, C2, C3, C4, r, individual, matrix, Nnodes, tuplenetwork, forcednode)
+    return A, B, v0, a, b, e0, pbar, delta, f, C1, C2, C3, C4, r, individual, matrix, Nnodes, tuplenetwork, forcednode
     
 
 @njit(fastmath = usefastmath)
@@ -34,7 +34,7 @@ def derivativesNET_V1(inp, t, paramtup, n):
     Output:
     dz:     A (N_nodes,6) matrix, containing all the derivatives of the variables.
     '''
-    A, B, v0, a, b, e0 , pbar, delta, f, C1, C2, C3, C4, r, individual, matrix, Nnodes, tuplenetwork, forcednode = paramtup
+    A, B, v0, a, b, e0, pbar, delta, f, C1, C2, C3, C4, r, individual, matrix, Nnodes, tuplenetwork, forcednode = paramtup
 
     # Now the input will be a matrix where each row i corresponds to the variables (z0,y0,z1,y1,z2,y2) of each node i.
     dz = np.zeros_like(inp)
@@ -93,7 +93,7 @@ def couplingval_V1(inp, connections, individual, C3, e0, r, v0, nn, tuplenetwork
 
 # VERSION 2. Each connection consists of different excitatory and inhibitory weights
 def individual_to_weights(individual, matrix_exc, matrix_inh):
-    '''Individual is transformed into two weight arrays. Individual should have size of 2*np.count_nonzero(matrix)'''
+    """Individual is transformed into two weight arrays. Individual should have size of 2*np.count_nonzero(matrix)"""
     individual = np.array(individual)
     ind_exc_weights = individual[0:len(np.nonzero(matrix_exc)[0])]
     ind_inh_weights = individual[len(np.nonzero(matrix_exc)[0]):]
@@ -109,10 +109,9 @@ def individual_to_weights(individual, matrix_exc, matrix_inh):
 
     return weights_exc, weights_inh
 
-# This function will also be modified when taking into account more complicated processes like feedback or long-range excitatory connections.
 
 def unpackingNET_V2(params):
-    '''Returns the values of the parameters in the dictionary params in a tuple so that we can work with numba'''
+    """Returns the values of the parameters in the dictionary params in a tuple so that we can work with numba"""
     A, B, v0, a, b, e0, pbar = params['A'],params['B'],params['v0'],params['a'], params['b'], params['e0'], params['pbar']
     delta, f, C1, C2 = params['delta'], params['f'], params['C1'], params['C2']
     C3, C4, r = params['C3'], params['C4'], params['r'] # JR Model Params
@@ -124,7 +123,7 @@ def unpackingNET_V2(params):
     individual = params['individual']
     weights_exc, weights_inh = individual_to_weights(individual, params['matrix_exc'], params['matrix_inh'])
 
-    return (A, B, v0, a, b, e0 , pbar, delta, f, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednode)
+    return A, B, v0, a, b, e0 , pbar, delta, f, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednode
 
 @njit(fastmath = usefastmath)
 def derivativesNET_V2(inp, t, paramtup, n):
@@ -160,35 +159,35 @@ def derivativesNET_V2(inp, t, paramtup, n):
         # Derivatives of each variable.
         dz0 = A*a*S(y1-y2,e0,r,v0) - 2*a*z0 - a**2*y0
         dy0 = z0
-        dz1 = A*a*(pbar + C2*S(C1*y0,e0,r,v0) + delta1*np.sin(2*np.pi*f*t)) - a**2*y1 - 2*a*z1 + pa
+        dz1 = A*a*(pbar + C2*S(C1*y0,e0,r,v0) + delta1*np.sin(2*np.pi*f*t) + pa) - a**2*y1 - 2*a*z1
         dy1 = z1
-        dz2 = B*b*(C4*S(C3*y0,e0,r,v0)) - 2*b*z2 - b**2*y2 + pb
+        dz2 = B*b*(C4*S(C3*y0,e0,r,v0) + pb) - 2*b*z2 - b**2*y2
         dy2 = z2
         dz[nn] = np.array([dz0, dy0, dz1, dy1, dz2, dy2])
     return dz
 
-@njit(fastmath = usefastmath)
+
+@njit(fastmath=usefastmath)
 def couplingval_V2(inp, row_weights_exc, row_weights_inh, C3, e0, r, v0, nn, tuplenetwork, Nnodes):
-    '''
-    Obtains the effects of the coupling for each node. One excitatory/inhibitory value constant per cortical column.
-    Main approach used in the first computations of the Genetic Algorithm'''
+    """Obtains the effects of the coupling for each node. One excitatory/inhibitory value constant per cortical column.
+    Main approach used in the first computations of the Genetic Algorithm"""
     pa = 0
     pb = 0
     # We obtain the contribution of each node.
-    for node,(value_ex, value_inh) in enumerate(zip(row_weights_exc, row_weights_inh)):
-        if value_ex != 0:  #by this we have acces to the nodes to which the current node is linked to
-            pa = pa + value_ex*S(inp[node,3]-inp[node,5], e0, r, v0)
-        elif value_inh != 0:
+    for node, (value_ex, value_inh) in enumerate(zip(row_weights_exc, row_weights_inh)):
+        if value_ex != 0:  # by this we have acces to the nodes to which the current node is linked to
+            pa = pa + value_ex*S(inp[node, 3]-inp[node, 5], e0, r, v0)
+        if value_inh != 0:
             pb = pb + value_inh*S(C3*inp[node, 1], e0, r, v0)
-    return pa,pb
+    return pa, pb
 
 
-# VERSION 3. The excitation comes from a time dependent signal, sith a pair of coupling values per connection (as in version 2), thus couplingval_V2 will be used.
+# VERSION 3. The excitation comes from a time dependent signal, with a pair of coupling values per connection (as in version 2), thus couplingval_V2 will be used.
 def unpackingNET_V3(params):
-    '''Returns the values of the parameters in the dictionary params in a tuple so that we can work with numba'''
+    """Returns the values of the parameters in the dictionary params in a tuple so that we can work with numba"""
     A, B, v0, a, b, e0, pbar = params['A'],params['B'],params['v0'],params['a'], params['b'], params['e0'], params['pbar']
     C1, C2 = params['C1'], params['C2']
-    C3, C4, r = params['C3'], params['C4'], params['r'] # JR Model Params
+    C3, C4, r = params['C3'], params['C4'], params['r']  # JR Model Params
 
     # Network architecture params
     Nnodes = params['Nnodes'] # Total number of nodes
@@ -201,18 +200,19 @@ def unpackingNET_V3(params):
     # Signals, that will be built outside the dynamics functions and will have to be the same length as will be the resulting vectors.
     signals = params['signals']# shape of (nodesfirstlayer, nsteps)
 
-    return (A, B, v0, a, b, e0 , pbar, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednodes, signals)
+    return A, B, v0, a, b, e0 , pbar, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednodes, signals
 
-@njit(fastmath = usefastmath)
+
+@njit(fastmath=usefastmath)
 def derivativesNET_V3(inp, t, paramtup, n):
-    ''' Returns derivatives of the 6 variables of the model for each node
+    """ Returns derivatives of the 6 variables of the model for each node
     Inputs:
     inp:    A (N_nodes,6) matrix
     t:      step of time for which the values are those of inp. t = tvec[n]
     n:      Step of the iteration
     Output:
     dz:     A (N_nodes,6) matrix, containing all the derivatives of the variables.
-    '''
+    """
     A, B, v0, a, b, e0, pbar, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednodes, signals = paramtup
     # Now the input will be a matrix where each row i corresponds to the variables (z0,y0,z1,y1,z2,y2) of each node i.
     dz = np.zeros_like(inp)
@@ -225,7 +225,8 @@ def derivativesNET_V3(inp, t, paramtup, n):
         y1 = x[3]
         z2 = x[4]
         y2 = x[5]
-        pbar = np.random.uniform(120, 360)
+        pbar = np.random.uniform(120, 130)
+        """
         # The following lines of code are just a test to see if it is possible
         # for one of the layers to oscillate at a different rhythm
         a = paramtup[3]
@@ -241,6 +242,7 @@ def derivativesNET_V3(inp, t, paramtup, n):
             C2 = 0.8*C1
             C3 = 0.25*C1
             C4 = 0.25*C1
+        """
         # Coupled intensities, we obtain them from a function.
         pa, pb = couplingval_V2(inp, weights_exc[nn], weights_inh[nn], C3, e0, r, v0, nn, tuplenetwork, Nnodes)
 
@@ -249,7 +251,7 @@ def derivativesNET_V3(inp, t, paramtup, n):
         # Derivatives of each variable.
         dz0 = A*a*S(y1-y2, e0, r, v0) - 2*a*z0 - a**2*y0
         dy0 = z0
-        dz1 = A*a*(pbar + C2*S(C1*y0, e0, r, v0) + pa) - a**2*y1 - 2*a*z1 
+        dz1 = A*a*(pbar + C2*S(C1*y0, e0, r, v0) + pa) - a**2*y1 - 2*a*z1
         dy1 = z1
         dz2 = B*b*(C4*S(C3*y0, e0, r, v0) + pb) - 2*b*z2 - b**2*y2
         dy2 = z2

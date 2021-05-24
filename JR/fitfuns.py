@@ -19,7 +19,7 @@ def fit_func_cross_V3(params, individual):
     fit0 = 0
     fit1 = 0
     fit2 = 0
-    maxf = 1 #0.9**2 + 2*0.7**2
+    maxf = 1  # 0.9**2 + 2*0.7**2
     for ii, (pair, unsync) in enumerate(zip(params['pairs'], params['unsync'])):
         idxcomp1 = idx_nodes_lastlayer + pair[0]
         idxcomp2 = idx_nodes_lastlayer + pair[1]
@@ -33,12 +33,11 @@ def fit_func_cross_V3(params, individual):
             cc2 = fastcrosscorrelation(y[idxunsync], y[idxcomp2], 50000)
 
             if ii == 0:
-                fit0 += cc0 #- (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+                fit0 += cc0  # - (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
             elif ii == 1:
-                fit1 += cc0 #- (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+                fit1 += cc0  # - (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
             else:
-                fit2 += cc0 #- (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
- 
+                fit2 += cc0  # - (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
 
     return fit0/(maxf*n), fit1/(maxf*n), fit2/(maxf*n)
 

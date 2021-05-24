@@ -9,6 +9,7 @@ from matplotlib import cm
 from matfuns import psd, findlayer
 import numpy as np
 import matplotlib.pyplot as plt
+from networkJR import individual_to_weights
 
 # General fontsizes
 labelfontsize = 15
@@ -150,7 +151,7 @@ def plot3x3_signals(y,t, span, tstep, signals):
 
 
 def plotanynet(y, t, span, params, bool_sig, signals):
-    ''' 
+    """
     Plots the dynamics of a ZxZxZx....xZ network of cortical columns. It is necessary that all layers have the same number of cortical columns.
     y:              Vector shaped (N_nodes, nsteps) where y[i,nsteps] represents the PSP of the pyramidal population of column i
     t:              Time vector
@@ -158,59 +159,66 @@ def plotanynet(y, t, span, params, bool_sig, signals):
     params:         Dictionary of parameters
     bool_sig:       Boolean indicating if we want to add the input signals to the plot
     signals:        Z x timesteps array containing the different input signals.
-    '''
+    """
     tuplenetwork = params['tuplenetwork']
-    yspan = (np.min(y)-1,np.max(y)+1)
-    nodesperlayer = tuplenetwork[0]
+
+    # First let's check if all the layers are the same
+    equal = True
+    for layer, num_nodes in enumerate(tuplenetwork[1:]):
+        if num_nodes != tuplenetwork[layer-1]:
+            equal = False
+    if equal:
+        maxnodesperlayer = tuplenetwork[0]
+    else:
+        maxnodesperlayer = max(tuplenetwork)
+    yspan = (np.min(y)-1, np.max(y)+1)
     layers = len(tuplenetwork)
     Nnodes = params['Nnodes']
-    fig, axes = plt.subplots(nrows=nodesperlayer, ncols=layers+1, 
-                            figsize=(6*(layers+1), 4*nodesperlayer))
+    fig, axes = plt.subplots(nrows=maxnodesperlayer, ncols=layers+1)#,figsize=(6*(layers+1), 4*maxnodesperlayer))
     
     fig.subplots_adjust(hspace=0.5)
-    fig.set_figheight(2*layers)
-    fig.set_figwidth(4*nodesperlayer)
+    fig.set_figheight(6*layers)
+    fig.set_figwidth(4*maxnodesperlayer)
 
     if span == 'large':
-        xspan = (t[-7001],t[-1])
+        xspan = (t[-15001], t[-1])
     elif span == 'small':
-        xspan = (t[-3000],t[-1])
+        xspan = (t[-7000], t[-1])
 
     cc = 0
     if bool_sig:
         for ii in range(signals.shape[0]):
             ax = axes[ii, cc]
-            ax.plot(t[-10000:], signals[ii, -10000:], 'k')
-            ax.set(xlim = xspan, ylim = (np.amin(signals[ii]), 1.3*np.amax(signals[ii])))
-            ax.set_xlabel(r'time (s)', fontsize = labelfontsize)
-            ax.set_ylabel(r'$Hz$', fontsize = labelfontsize)
-            ax.tick_params(labelsize = labelticksize)
+            ax.plot(t[-30000:], signals[ii, -30000:], 'k')
+            ax.set(xlim=xspan, ylim=(np.amin(signals[ii]), 1.3*np.amax(signals[ii])))
+            ax.set_xlabel(r'time (s)', fontsize=labelfontsize)
+            ax.set_ylabel(r'$Hz$', fontsize=labelfontsize)
+            ax.tick_params(labelsize=labelticksize)
         cc += 1
 
-    rr = 0
+    idxlayers = np.zeros(layers)
     for ii in range(Nnodes):
         f, PSD = psd(y[ii], params['tstep'])
         maxf = np.abs(f[np.argmax(PSD)])
-        if rr == nodesperlayer:
-            cc += 1; rr = 0
-        ax = axes[rr,cc]
+        layerii = findlayer(ii, tuplenetwork)
+        ax = axes[int(idxlayers[layerii]), layerii+1]
+        idxlayers[layerii] = int(idxlayers[layerii]) + 1
         yy = y[ii]
-        layerii = findlayer(ii,tuplenetwork)
-        ax.plot(t, yy, color = cm.tab10(layerii))
-        ax.set(xlim = xspan, ylim = yspan)
-        ax.set_xlabel(r'time (s)', fontsize = labelfontsize)
-        ax.set_ylabel(r'$y_1-y_2$', fontsize = labelfontsize)
+        ax.plot(t, yy, color=cm.tab10(layerii))
+        ax.set(xlim=xspan, ylim=yspan)
+        ax.set_xlabel(r'time (s)', fontsize=labelfontsize)
+        ax.set_ylabel(r'$y_1-y_2$', fontsize=labelfontsize)
         ax.set_title(r'max of PSD f = %g Hz' %maxf)
-        ax.tick_params(labelsize = labelticksize)
-        rr += 1
+        ax.tick_params(labelsize=labelticksize)
     
     plt.tight_layout()
     return fig
 
+
 def plotinputsoutputs(y, t, span, params, bool_sig, signals):
-    ''' A function that plots input signals and first and last layers' dynamics. 
+    """A function that plots input signals and first and last layers' dynamics.
     First and last layer should have the same nodes. This function will allow to obtain results from more bizarre
-    network architectures.'''
+    network architectures."""
     nodesfirstlast = params['tuplenetwork'][0]
     yspan = (np.min(y)-1,np.max(y)+1)
     if span == 'large':
@@ -224,10 +232,10 @@ def plotinputsoutputs(y, t, span, params, bool_sig, signals):
     for ii in range(signals.shape[0]):
         ax = axes[ii, cc]
         ax.plot(t[-10000:], signals[ii, -10000:], 'k')
-        ax.set(xlim = xspan, ylim = (np.amin(signals[ii]), 1.3*np.amax(signals[ii])))
-        ax.set_xlabel(r'time (s)', fontsize = labelfontsize)
-        ax.set_ylabel(r'$Hz$', fontsize = labelfontsize)
-        ax.tick_params(labelsize = labelticksize)
+        ax.set(xlim=xspan, ylim=(np.amin(signals[ii]), 1.3*np.amax(signals[ii])))
+        ax.set_xlabel(r'time (s)', fontsize=labelfontsize)
+        ax.set_ylabel(r'$Hz$', fontsize=labelfontsize)
+        ax.tick_params(labelsize=labelticksize)
     cc += 1
 
     # Then plot the first layer dynamics
@@ -254,15 +262,15 @@ def plotinputsoutputs(y, t, span, params, bool_sig, signals):
     plt.tight_layout()
     return fig
 
+
 def plotcouplings3x3(solution):
-    ''' 
-    Returns an imshow of the value of the couplings of a certain set of weights.
+    """Returns an imshow of the value of the couplings of a certain set of weights.
     Valid only for the case of one excitatory and inhibitory coefficient per column.
-    solution = [alpha0, alpha1, alpha2,..., alpha8, beta8, beta7, ..., beta0]'''
+    solution = [alpha0, alpha1, alpha2,..., alpha8, beta8, beta7, ..., beta0]"""
     fig, axes = plt.subplots(1, 2)
     minim = np.amin(solution); maxim = np.amax(solution)
-    alphas = np.reshape(solution[0:9],(3,3)).T
-    betas = np.reshape(np.flip(solution[9:]),(3,3)).T
+    alphas = np.reshape(solution[0:9], (3, 3)).T
+    betas = np.reshape(np.flip(solution[9:]), (3, 3)).T
     ax = axes[0]
     ax.imshow(alphas, vmin = minim, vmax = maxim)
     ax.set_title('Excitatory Coupling Coefficients')
@@ -276,18 +284,19 @@ def plotcouplings3x3(solution):
     fig.colorbar(im, cax=cbar_ax)
     return fig
 
-from networkJR import individual_to_weights
+
 def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
-    ''' Returns an imshow of the excitatory and inhibitory weight matrix. solution is the vector of the individiual with best fitness.'''
-    fig, axes = plt.subplots(1, 2)
+    """Returns an imshow of the excitatory and inhibitory weight matrix. solution is the vector of the individiual
+     with best fitness."""
+    fig, axes = plt.subplots(1, 2, figsize=(10, 6))
     weights_exc, weights_inh = individual_to_weights(solution, matrix_exc, matrix_inh)
     ax = axes[0]
-    ax.imshow(weights_exc, vmin = maxminvals[0], vmax = maxminvals[1])
+    ax.imshow(weights_exc, vmin=maxminvals[0], vmax=maxminvals[1])
     ax.set_title('Excitatory Coupling Coefficients')
     ax.set_xlabel('Node')
     ax.set_ylabel('Node')
     ax = axes[1]
-    im = ax.imshow(weights_inh, vmin = maxminvals[0], vmax = maxminvals[1])
+    im = ax.imshow(weights_inh, vmin=maxminvals[0], vmax=maxminvals[1])
     ax.set_title('Inhibitory Coupling Coefficients')
     ax.set_xlabel('Node')
     ax.set_ylabel('Node')
@@ -295,7 +304,7 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(im, cax=cbar_ax)
 
-    return fig  
+    return fig
 
 # Plotting GA results:
 def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_generations = [], v = 1):
@@ -344,6 +353,7 @@ def plot_bestind_normevol(bestsols, num_generations, params):
     ax.legend(loc='best')
     return fig
 
+
 def plot_sigsingleJR(t, y, signal):
     '''Returns the dynamics of the signal and a single JR column in the same
     plot. y and signal should have equivalent sizes.'''
@@ -362,6 +372,7 @@ def plot_sigsingleJR(t, y, signal):
     plt.tight_layout()
     return fig
 
+
 def plot_inputs(y, signals, params, t, newfolder):
     inputnodes = params['tuplenetwork'][0]
     for ii in range(inputnodes):
@@ -370,6 +381,7 @@ def plot_inputs(y, signals, params, t, newfolder):
         axes[1].plot(t, y[ii], 'r')
         axes[1].set(ylim = (0,13))
         fig.savefig(newfolder + '/inputs_' + str(ii) + '.png')
+
 
 def plot_fftoutputs(y, params, newfolder):
     nodeslast = params['tuplenetwork'][-1]
@@ -381,5 +393,3 @@ def plot_fftoutputs(y, params, newfolder):
         axes[ii].plot(f, psds)
         axes[ii].set(xlim = (0, 40))
     fig.savefig(newfolder + '/fftinputs.png')
-
-

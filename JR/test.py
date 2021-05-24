@@ -2,46 +2,77 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from signals import build_p_inputs, build_dataset, build_p_inputs_shifted, build_p_vector_soft, p_times, p_amplitudes, build_p_vector
-from matfuns import fastcrosscorrelation, findlayer, psd
-from singleJR import obtaindynamics, derivatives_signal, unpacking_signal
+from matfuns import fastcrosscorrelation, findlayer, psd, networkmatrix_exc_inh
+from networkJR import obtaindynamicsNET, individual_to_weights
+from plotfuns import plotanynet, plotcouplings3x3V2
 
-
-t = np.arange(0, 40, 0.001)
-t_order = p_times((t[0], t[-1]))
-amps_order = p_amplitudes(t_order)
-p_vec = build_p_vector_soft(t, t_order, amps_order, 250)
-
-#Test per a veure la beta activity
 params = {'A': 3.25, 'B': 22.0, 'v0': 6.0}
 params['a'], params['b'], params['e0'] = 100.0, 50.0, 2.5
 params['pbar'], params['delta'], params['f'] = 155.0, 65.0, 8.5
 
-params['C'] = C = 135
+params['C'] = C = 133.5
 params['C1'], params['C2'], params['C3'], params['C4'] = C, 0.8*C, 0.25*C, 0.25*C  # Dimensionless
 
 params['r'] = 0.56  # mV^(-1)
 
-# No m'interessen les freqüències!
-params['delta'] = 0
-params['f'] = 0
-params['signal'] = p_vec
+params['delta'] = 72.09
+params['f'] = 8.6
 
-y, t = obtaindynamics(params, (0, 40), 0.001, derivatives_signal, unpacking_signal)
-plt.figure(figsize=(21,10))
-plt.subplot(211)
-plt.plot(t, p_vec[10000:], 'k')
-plt.xlim((t_order[-3]-2, t_order[-3]+2))
-plt.subplot(212)
-plt.plot(t, y, 'r')
-plt.xlim((t_order[-3]-2, t_order[-3]+2))
+# NETWORK ARCHITECTURE PARAMETERS
+params['tuplenetwork'] = (3, 6, 3)
+params['recurrent'] = False
+params['forcednodes'] = (0, 1, 2)
+
+Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v=0)
+
+params['Nnodes'] = Nnodes
+params['matrix_exc'] = matrix_exc
+params['matrix_inh'] = matrix_inh
+maxval = 0.3*C  # Quan tots estan a 0.3C el valor mig puja força pero sembla que es podra treballar en aquest regim
+
+# Matrix exc és una matriu Nnodes X Nnodes, igual que matrix inh. Columna ii determina a quins nodes el node ii afecta
+# fila ii determina quins nodes afecten al node ii
+idexes = np.nonzero(matrix_exc)
+exc_w = np.copy(matrix_exc)
+exc_w[idexes] = 10**(-4)
+inh_w = np.copy(matrix_inh)
+inh_w[idexes] = 10**(-4)
+
+exc_w[3, [0, 1]] = [1*maxval, 0.5*maxval]
+exc_w[4, [0, 1]] = [0.5*maxval, 1*maxval]
+exc_w[5, [0, 2]] = [1*maxval, 0.5*maxval]
+exc_w[6, [0, 2]] = [0.5*maxval, 1*maxval]
+exc_w[7, [1, 2]] = [1*maxval, 0.5*maxval]
+exc_w[8, [1, 2]] = [0.5*maxval, 1*maxval]
+
+inh_w[8, [1,2]] = [0.1*maxval, 0.1*maxval]
+
+
+# Així doncs es podrà anar modificant les diferents connexions de manera manual
+
+# Individual son les dues matrius juntes posades en un vector fila. Tindré amagat la linea que fa la transformacio.
+# TENIR EN COMPTE QUE NOMÉS ES POSEN A L'INDIVIDUAL ELS ELEMENTS NO NULS, SI VOLEM QUE ALGUNA CONNEXIO SIGUI MOLT
+# BAIXA, PER AQUESTES PROVES, CALDRÀ POSARLA EN 1E-4 O ALGUNA COSA AIXI, I NO NOMES 0.
+params['individual'] = np.append(exc_w[idexes].flatten(), inh_w[idexes].flatten())
+
+params['tstep'] = 0.001
+params['tspan'] = (0, 70)
+
+# INPUT SIGNALS: TRAINING AND TESTING SETS
+offset = 10
+ampnoise = 2
+amps = [110, 120]
+
+t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
+params['signals'] = build_p_inputs(params['tuplenetwork'][0], t, offset, (0, 1), ampnoise)
+
+y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
+fig = plotanynet(y, t, 'large', params, True, params['signals'])
+
+fig = plotcouplings3x3V2(params['individual'], matrix_exc, matrix_inh, maxminvals=(0, maxval))
 plt.show()
 
-
-
-
-
-
-
+# Other shit
 '''
 inputnodes = 3
 t = np.arange(0, 80, 0.001)

@@ -129,8 +129,7 @@ def obtaindynamics(params, tspan, tstep, derivatives, unpacking):
     tstep:  Timestep
     '''
     funparams = unpacking(params)
-    x0 = 5*np.random.normal(size=6)  # starting from random normally distributed IC 
-    
+    x0 = 5*np.random.normal(size=6)  # starting from random normally distributed IC
     x1, t1 = Heun_nonoise(x0, tspan, tstep, derivatives, funparams)  # We want to get rid of the transitory in the ode.
     x, t = x1[10000:], t1[10000:]  # First ten seconds omitted, enough for it to converge.
     # Select from the 6 ODEs those corresponding to the excitatory and inhibitory PSPs

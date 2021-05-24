@@ -1,18 +1,19 @@
-''' Some of the different "internal logic" of the input signals '''
+""" Some of the different "internal logic" of the input signals """
 
 import random
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import signal
+from numba import njit
 
 from plotfuns import plot_sigsingleJR
 from singleJR import unpacking_signal, derivatives_signal, obtaindynamics
 from filefuns import get_num
 
 
-def p_times(tspan, lens=[5, 10, 15]):
-    '''Returns a list of the times at which there is a change in value.'''
+def p_times(tspan, lens=(10, 15, 20)):
+    """Returns a list of the times at which there is a change in value."""
     time = tspan[0] + random.choice(lens)
     time_order = [time]
     while time_order[-1] < tspan[1]:
@@ -20,12 +21,14 @@ def p_times(tspan, lens=[5, 10, 15]):
         time_order.append(time)
     if time_order[-1] > tspan[0]:
         time_order[-1] = tspan[1]
-    return time_order
+    return np.array(time_order)
 
-def p_amplitudes(time_order, amps=[-190, -205, -220], sils=True,
-                 rand=False, randrange=(20, 120), randst=10):
-    '''Returns a list stating which amplitudes correspond to the time_order
-    list. One can select if always full random or if nota-silenci-nota...'''
+
+def p_amplitudes(time_order, amps=(110, 120, 130), sils=True,
+                 rand=False, randst=10):
+    """Returns a list stating which amplitudes correspond to the time_order
+    list. One can select if always full random or if nota-silenci-nota..."""
+    randrange = (amps[0], amps[-1])
     if rand:
         amps = np.random.uniform(randrange[0], randrange[1], randst)
     if sils:
@@ -37,10 +40,12 @@ def p_amplitudes(time_order, amps=[-190, -205, -220], sils=True,
             amps_order = amps_order[0:-1]
     else:
         amps_order = [random.choice(amps) for time in time_order]
-    return amps_order
+    return np.array(amps_order)
 
-def build_p_vector(t, time_order, amps_order, offset, ampnoise=10):
-    '''Builds the p(t) signal vector/array p(t) = offset + amp(t) + random(noise)'''
+
+@njit(fastmath=True)
+def build_p_vector(t, time_order, amps_order, offset, ampnoise=5):
+    """Builds the p(t) signal vector/array p(t) = offset + amp(t) + random(noise)"""
     p_vector = np.zeros_like(t)
     idx = 0
     for ii, tt in enumerate(t):
@@ -49,11 +54,13 @@ def build_p_vector(t, time_order, amps_order, offset, ampnoise=10):
             idx += 1
     return p_vector
 
-def build_p_vector_soft(t, time_order, amps_order, offset, ampnoise=10):
-    '''Same as build p_vector but i want to soften the discontinuity'''
+
+@njit(fastmath=True)
+def build_p_vector_soft(t, time_order, amps_order, offset, ampnoise=5):
+    """Same as build p_vector but i want to soften the discontinuity"""
     p_vector = np.zeros_like(t)
     idx = 0
-    ramp_steps = 1000
+    ramp_steps = 50
     for ii, tt in enumerate(t):
         p_vector[ii] = offset + amps_order[idx] + np.random.normal(0, ampnoise)
     
@@ -64,42 +71,43 @@ def build_p_vector_soft(t, time_order, amps_order, offset, ampnoise=10):
     return p_vector
 
 
-def build_p_inputs(inputnodes, t, offset, corrnodes):
-    '''Builds a (inputnodes, t.size) array containing the different input
+def build_p_inputs(inputnodes, t, offset, corrnodes, ampnoise=5):
+    """ Builds a (inputnodes, t.size) array containing the different input
     vectors p that go into a node.
-    All corrnodes will be generated with the same time_order'''
+    All corrnodes will be generated with the same time_order """
     corr_times = p_times((t[0], t[-1]))
     p_inputs = np.zeros((inputnodes, t.size))
     for node in range(inputnodes):
         if node in corrnodes:
             p_inputs[node, :] = build_p_vector_soft(t, corr_times,
-                                                    p_amplitudes(corr_times), offset)
+                                                    p_amplitudes(corr_times), offset, ampnoise)
         else:
             times = p_times((t[0], t[-1]))
             p_inputs[node, :] = build_p_vector_soft(t, times, p_amplitudes(times),
-                                                    offset)
+                                                    offset, ampnoise)
 
     return p_inputs
 
 
-def build_p_inputs_shifted(inputnodes, t, offset, corrnodes, tshift, amp=-205):
-    '''Adds a time shift to the input vectors. tshift in seconds '''
+def build_p_inputs_shifted(inputnodes, t, offset, corrnodes, tshift, amp=110, ampnoise=5):
+    """ Adds a time shift to the input vectors. tshift in seconds """
     idx_shift = int(tshift/(t[1]-t[0]))
     p_inputs = np.zeros((inputnodes, t.size))
     for node in range(inputnodes):
         time_order = p_times((t[0], t[-1]))
         amps_order = p_amplitudes(time_order, [0, amp], rand=False)
-        p_inputs[node, :] = build_p_vector_soft(t, time_order, amps_order, offset)
+        p_inputs[node, :] = build_p_vector_soft(t, time_order, amps_order, offset, ampnoise)
     
     # Y despues cambiamos el que toque haciendole el shift
     p_inputs[corrnodes[1]] = np.roll(p_inputs[corrnodes[0]], idx_shift)
     return p_inputs
 
+
 def build_dataset(n, inputnodes, corrpairs, t, offset=0, shift=False, tshift=5):
-    '''Returns a list containing the different sets of inputs for each 
+    """Returns a list containing the different sets of inputs for each
     pair of correlated input signals. That is, a len(corrpairs) list where
     each element is an (n, inputnodes, t.size) array, containing n different
-    combinations of input signals.'''
+    combinations of input signals."""
     aux_data = np.zeros((n, inputnodes, t.size))
     dataset = []
     for jj in range(len(corrpairs)):
@@ -116,15 +124,17 @@ def build_dataset(n, inputnodes, corrpairs, t, offset=0, shift=False, tshift=5):
 
 # These will not be taken into account anymore for the development of my work
 
+
 def sig_Harmonics(t, f, inputnodes):
-    '''Returns three signals, two of them being harmonics of the first one.
-    They are squared signals.'''
+    """Returns three signals, two of them being harmonics of the first one.
+    They are squared signals."""
     signals = np.zeros((inputnodes, t.size))
     fs = [f, 2*f, 3*f]
     for ii in range(inputnodes):
         signals[ii] = signal.square(2*np.pi*fs[ii]*t)
 
     return signals
+
 
 def sig_random(t, inputnodes, T_TO_RAND=500, modulate=False, f=0):
     '''Returns inputnodes signals where after a certain T_TO_RAND time, a 
