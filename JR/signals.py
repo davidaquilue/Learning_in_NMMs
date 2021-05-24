@@ -11,7 +11,7 @@ from singleJR import unpacking_signal, derivatives_signal, obtaindynamics
 from filefuns import get_num
 
 
-def p_times(tspan, lens = [5, 8, 10, 12]):
+def p_times(tspan, lens=[5, 10, 15]):
     '''Returns a list of the times at which there is a change in value.'''
     time = tspan[0] + random.choice(lens)
     time_order = [time]
@@ -22,8 +22,8 @@ def p_times(tspan, lens = [5, 8, 10, 12]):
         time_order[-1] = tspan[1]
     return time_order
 
-def p_amplitudes(time_order, amps=[0, 5, 10, 20, 30], sils=True,
-                 rand=True, randrange=(20, 120), randst=10):
+def p_amplitudes(time_order, amps=[-190, -205, -220], sils=True,
+                 rand=False, randrange=(20, 120), randst=10):
     '''Returns a list stating which amplitudes correspond to the time_order
     list. One can select if always full random or if nota-silenci-nota...'''
     if rand:
@@ -31,7 +31,7 @@ def p_amplitudes(time_order, amps=[0, 5, 10, 20, 30], sils=True,
     if sils:
         amps_order = []
         while len(amps_order) < len(time_order):
-            amps_order.append(random.choice(amps[1:]))
+            amps_order.append(random.choice(amps))
             amps_order.append(0)
         if len(amps_order) > len(time_order):
             amps_order = amps_order[0:-1]
@@ -39,17 +39,30 @@ def p_amplitudes(time_order, amps=[0, 5, 10, 20, 30], sils=True,
         amps_order = [random.choice(amps) for time in time_order]
     return amps_order
 
-# Ahora falta hacer una función que pase estas dos otras funciones a vectores
-# de tiempo como se hace en la sig_musical.
-
-def build_p_vector(t, time_order, amps_order, offset):
+def build_p_vector(t, time_order, amps_order, offset, ampnoise=10):
+    '''Builds the p(t) signal vector/array p(t) = offset + amp(t) + random(noise)'''
     p_vector = np.zeros_like(t)
     idx = 0
     for ii, tt in enumerate(t):
-        p_vector[ii] = offset + amps_order[idx] + np.random.normal(0, 5)
+        p_vector[ii] = offset + amps_order[idx] + np.random.normal(0, ampnoise)
         if tt > time_order[idx]:
             idx += 1
     return p_vector
+
+def build_p_vector_soft(t, time_order, amps_order, offset, ampnoise=10):
+    '''Same as build p_vector but i want to soften the discontinuity'''
+    p_vector = np.zeros_like(t)
+    idx = 0
+    ramp_steps = 1000
+    for ii, tt in enumerate(t):
+        p_vector[ii] = offset + amps_order[idx] + np.random.normal(0, ampnoise)
+    
+        if tt > time_order[idx]:
+            idx += 1
+            p_vector[ii-ramp_steps+1:ii+1] = offset + amps_order[idx-1] + np.linspace(0, ramp_steps-1, ramp_steps)*(amps_order[idx]-amps_order[idx-1])/ramp_steps + np.random.normal(0, ampnoise, ramp_steps)
+    
+    return p_vector
+
 
 def build_p_inputs(inputnodes, t, offset, corrnodes):
     '''Builds a (inputnodes, t.size) array containing the different input
@@ -59,16 +72,30 @@ def build_p_inputs(inputnodes, t, offset, corrnodes):
     p_inputs = np.zeros((inputnodes, t.size))
     for node in range(inputnodes):
         if node in corrnodes:
-            p_inputs[node, :] = build_p_vector(t, corr_times,
-                                               p_amplitudes(corr_times), offset)
+            p_inputs[node, :] = build_p_vector_soft(t, corr_times,
+                                                    p_amplitudes(corr_times), offset)
         else:
             times = p_times((t[0], t[-1]))
-            p_inputs[node, :] = build_p_vector(t, times, p_amplitudes(times),
-                                               offset)
+            p_inputs[node, :] = build_p_vector_soft(t, times, p_amplitudes(times),
+                                                    offset)
 
     return p_inputs
 
-def build_dataset(n, inputnodes, corrpairs, t, offset=0):
+
+def build_p_inputs_shifted(inputnodes, t, offset, corrnodes, tshift, amp=-205):
+    '''Adds a time shift to the input vectors. tshift in seconds '''
+    idx_shift = int(tshift/(t[1]-t[0]))
+    p_inputs = np.zeros((inputnodes, t.size))
+    for node in range(inputnodes):
+        time_order = p_times((t[0], t[-1]))
+        amps_order = p_amplitudes(time_order, [0, amp], rand=False)
+        p_inputs[node, :] = build_p_vector_soft(t, time_order, amps_order, offset)
+    
+    # Y despues cambiamos el que toque haciendole el shift
+    p_inputs[corrnodes[1]] = np.roll(p_inputs[corrnodes[0]], idx_shift)
+    return p_inputs
+
+def build_dataset(n, inputnodes, corrpairs, t, offset=0, shift=False, tshift=5):
     '''Returns a list containing the different sets of inputs for each 
     pair of correlated input signals. That is, a len(corrpairs) list where
     each element is an (n, inputnodes, t.size) array, containing n different
@@ -77,24 +104,17 @@ def build_dataset(n, inputnodes, corrpairs, t, offset=0):
     dataset = []
     for jj in range(len(corrpairs)):
         for nn in range(n):
-            p_inputs = build_p_inputs(inputnodes, t, offset, corrpairs[jj])
+            if shift:
+                p_inputs = build_p_inputs_shifted(inputnodes, t, offset,
+                                                  corrpairs[jj], tshift)
+            else:
+                p_inputs = build_p_inputs(inputnodes, t, offset, corrpairs[jj])
             aux_data[nn] = p_inputs
         dataset.append(np.copy(aux_data))
 
     return dataset
 
-
-# Habrá que tener en cuenta un poco el tema del corrpair, la verdad es que 
-# a lo mejor seria mas practico juntar los dos.
-def add_shift(p_inputs, tshift, tstep, corrnodes):
-    '''Adds a time shift to the input vectors. tshift in seconds '''
-    idx_shift = int(tshift/tstep)
-    p_inputs[corrnodes[1]] = np.roll(p_inputs[corrnodes[1]], idx_shift)
-    return p_inputs
-
-
-
-# These will not be taken into account anymore for the development of my work 
+# These will not be taken into account anymore for the development of my work
 
 def sig_Harmonics(t, f, inputnodes):
     '''Returns three signals, two of them being harmonics of the first one.

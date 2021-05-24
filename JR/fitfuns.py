@@ -15,10 +15,11 @@ def fit_func_cross_V3(params, individual):
     dataset = params['train_dataset']
     nodes_in_lastlayer = params['tuplenetwork'][-1]
     idx_nodes_lastlayer = params['Nnodes'] - nodes_in_lastlayer
-
+    n = params['n']
     fit0 = 0
     fit1 = 0
     fit2 = 0
+    maxf = 1 #0.9**2 + 2*0.7**2
     for ii, (pair, unsync) in enumerate(zip(params['pairs'], params['unsync'])):
         idxcomp1 = idx_nodes_lastlayer + pair[0]
         idxcomp2 = idx_nodes_lastlayer + pair[1]
@@ -27,18 +28,19 @@ def fit_func_cross_V3(params, individual):
         for nn in range(params['n']):
             params['signals'] = dataset[ii][nn]  # Extract the one needed from the dataset
             y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
-            cc0 = fastcrosscorrelation(y[idxcomp1], y[idxcomp2], 30000)
-            cc1 = fastcrosscorrelation(y[idxcomp1], y[idxunsync], 30000)
-            cc2 = fastcrosscorrelation(y[idxunsync], y[idxcomp2], 30000)
+            cc0 = fastcrosscorrelation(y[idxcomp1], y[idxcomp2], 50000)
+            cc1 = fastcrosscorrelation(y[idxcomp1], y[idxunsync], 50000)
+            cc2 = fastcrosscorrelation(y[idxunsync], y[idxcomp2], 50000)
 
             if ii == 0:
-                fit1 += cc0 - (cc1 + cc2)/2
+                fit0 += cc0 #- (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
             elif ii == 1:
-                fit0 += cc0 - (cc1 + cc2)/2
+                fit1 += cc0 #- (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
             else:
-                fit2 += cc0 - (cc1 + cc2)/2
+                fit2 += cc0 #- (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+ 
 
-    return fit0/params['n'], fit1/params['n'], fit2/params['n']
+    return fit0/(maxf*n), fit1/(maxf*n), fit2/(maxf*n)
 
 
 

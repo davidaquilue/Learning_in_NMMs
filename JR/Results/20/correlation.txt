@@ -1,0 +1,36 @@
+0 pair, 0 element in the set: 
+Nodes 19 and 20 should be synchronized:
+Correlation 19 with 20: 0.9623520002593977
+Correlation 19 with 21: 0.9841640020471106
+Correlation 20 with 21: 0.9729184048577435
+ 
+0 pair, 1 element in the set: 
+Nodes 19 and 20 should be synchronized:
+Correlation 19 with 20: 0.9170464072734772
+Correlation 19 with 21: 0.9553474153809605
+Correlation 20 with 21: 0.9476998522194031
+ 
+1 pair, 0 element in the set: 
+Nodes 19 and 21 should be synchronized:
+Correlation 19 with 20: 0.957114455911638
+Correlation 19 with 21: 0.9776505029920107
+Correlation 20 with 21: 0.9577019024379158
+ 
+1 pair, 1 element in the set: 
+Nodes 19 and 21 should be synchronized:
+Correlation 19 with 20: 0.9898769969818809
+Correlation 19 with 21: 0.9910527213500656
+Correlation 20 with 21: 0.9936384110059855
+ 
+2 pair, 0 element in the set: 
+Nodes 20 and 21 should be synchronized:
+Correlation 19 with 20: 0.9796321609688248
+Correlation 19 with 21: 0.981485100041391
+Correlation 20 with 21: 0.9947379343448038
+ 
+2 pair, 1 element in the set: 
+Nodes 20 and 21 should be synchronized:
+Correlation 19 with 20: 0.9938070090941656
+Correlation 19 with 21: 0.9888259414207891
+Correlation 20 with 21: 0.9948110048328551
+ 

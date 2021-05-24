@@ -164,7 +164,8 @@ def plotanynet(y, t, span, params, bool_sig, signals):
     nodesperlayer = tuplenetwork[0]
     layers = len(tuplenetwork)
     Nnodes = params['Nnodes']
-    fig, axes = plt.subplots(nrows = nodesperlayer, ncols = layers+1)
+    fig, axes = plt.subplots(nrows=nodesperlayer, ncols=layers+1, 
+                            figsize=(6*(layers+1), 4*nodesperlayer))
     
     fig.subplots_adjust(hspace=0.5)
     fig.set_figheight(2*layers)
@@ -188,6 +189,8 @@ def plotanynet(y, t, span, params, bool_sig, signals):
 
     rr = 0
     for ii in range(Nnodes):
+        f, PSD = psd(y[ii], params['tstep'])
+        maxf = np.abs(f[np.argmax(PSD)])
         if rr == nodesperlayer:
             cc += 1; rr = 0
         ax = axes[rr,cc]
@@ -197,6 +200,7 @@ def plotanynet(y, t, span, params, bool_sig, signals):
         ax.set(xlim = xspan, ylim = yspan)
         ax.set_xlabel(r'time (s)', fontsize = labelfontsize)
         ax.set_ylabel(r'$y_1-y_2$', fontsize = labelfontsize)
+        ax.set_title(r'max of PSD f = %g Hz' %maxf)
         ax.tick_params(labelsize = labelticksize)
         rr += 1
     
@@ -214,7 +218,7 @@ def plotinputsoutputs(y, t, span, params, bool_sig, signals):
     elif span == 'small':
         xspan = (t[-3000],t[-1])
     
-    fig, axes = plt.subplots(nrows = nodesfirstlast, ncols = 3)
+    fig, axes = plt.subplots(nrows=nodesfirstlast, ncols=3, figsize=(21,10))
     # Plot the signals first
     cc = 0
     for ii in range(signals.shape[0]):
@@ -364,6 +368,18 @@ def plot_inputs(y, signals, params, t, newfolder):
         fig, axes = plt.subplots(2, 1, figsize=(20,10))
         axes[0].plot(t, signals[ii], 'k')
         axes[1].plot(t, y[ii], 'r')
-        axes[1].set(ylim = (5,10))
-        fig.savefig(newfolder + '/inputs_' + str(ii))
-    
+        axes[1].set(ylim = (0,13))
+        fig.savefig(newfolder + '/inputs_' + str(ii) + '.png')
+
+def plot_fftoutputs(y, params, newfolder):
+    nodeslast = params['tuplenetwork'][-1]
+    idx = params['Nnodes'] - nodeslast
+    fig, axes = plt.subplots(nodeslast, 1, figsize = (8, 6*nodeslast))
+    for ii in range(nodeslast):
+        aux = idx + ii
+        f, psds = psd(y[aux], params['tstep'])
+        axes[ii].plot(f, psds)
+        axes[ii].set(xlim = (0, 40))
+    fig.savefig(newfolder + '/fftinputs.png')
+
+

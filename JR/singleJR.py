@@ -9,7 +9,7 @@ def unpacking(params):
     A, B, v0, a, b, e0, pbar = params['A'],params['B'],params['v0'],params['a'], params['b'], params['e0'], params['pbar']
     delta, f, C, C1, C2 = params['delta'], params['f'], params['C'], params['C1'], params['C2']
     C3, C4, r = params['C3'], params['C4'], params['r']
-    return (A, B, v0, a, b, e0 , pbar, delta, f, C, C1, C2, C3, C4, r)
+    return (A, B, v0, a, b, e0, pbar, delta, f, C, C1, C2, C3, C4, r)
 
 @njit(fastmath=usefastmath)
 def derivatives(x, t, paramtup, n):
@@ -30,6 +30,7 @@ def derivatives(x, t, paramtup, n):
     y1 = x[3]
     z2 = x[4]
     y2 = x[5]
+    pbar = np.random.uniform(120, 360)
     # Derivatives of each variable.
     dz0 = A*a*S(y1-y2,e0,r,v0) - 2*a*z0 - a**2*y0
     dy0 = z0

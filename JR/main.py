@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from matfuns import networkmatrix, maxcrosscorrelation, creating_signals, networkmatrix_exc_inh, fastcrosscorrelation  # This last function will be used later on
-from plotfuns import plotcouplings3x3V2, plot3x3_signals, plot_genfit, plotanynet, plotinputsoutputs, plot_bestind_normevol, plot_inputs
+from plotfuns import plotcouplings3x3V2, plot3x3_signals, plot_genfit, plotanynet, plotinputsoutputs, plot_bestind_normevol, plot_inputs, plot_fftoutputs
 from networkJR import obtaindynamicsNET
 from fitfuns import fit_func_cross_V3
 from filefuns import check_create_results_folder, test_folder
@@ -29,11 +29,11 @@ params['delta'] = 72.09
 params['f'] = 8.6
 
 # NETWORK ARCHITECTURE PARAMETERS
-params['tuplenetwork'] = (3, 10, 10, 3)
+params['tuplenetwork'] = (3, 3, 3, 3)
 params['recurrent'] = False
 params['forcednodes'] = (0, 1, 2)
 
-Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v=2)  # v indicates which of the weight tests one wants to perform
+Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v=0)  # v indicates which of the weight tests one wants to perform
 # (see the function in the matfuns script for further information on the tests)
 indivsize = np.count_nonzero(matrix_exc) + np.count_nonzero(matrix_inh)
 
@@ -41,7 +41,7 @@ params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
 params['tstep'] = 0.001
-params['tspan'] = (0, 40)
+params['tspan'] = (0, 70)
 
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
@@ -51,24 +51,24 @@ idx = params['Nnodes'] - params['tuplenetwork'][-1]
 params['output_pairs'] = ((idx+0, idx+1), (idx+0, idx+2), (idx+1, idx+2)) # THIS LINE EITHER USE IT OR DELETE IT
 
 params['unsync'] = (2, 1, 0)    # This line either use it or delete it
-params['n'] = 50  # Amount of elements in the training set, at least 10
+params['n'] = 30  # Amount of elements in the training set, at least 10
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
-                                 params['pairs'], t, offset=100)
+                                 params['pairs'], t, offset=320, shift=True)
 params['test_dataset'] = build_dataset(int(0.1*params['n']),
                                        params['tuplenetwork'][0],
-                                       params['pairs'], t, offset=100)
+                                       params['pairs'], t, offset=320, shift=True)
 
 
 
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
-num_generations = 100
-popsize = 30        # Population size
+num_generations = 150
+popsize = 38        # Population size
 mutindprob = 0.2    # Probability that an individual undergoes mutation
 coprob = 0.5        # Crossover probability
-maxgene = 0.1*C       # Maximum coupling value of a connection
+maxgene = 1*C       # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
-par_processes = 30  # How many cores will be used in order to parallelize the GA.
+par_processes = 38  # How many cores will be used in order to parallelize the GA.
 L = 15		        # After how many non-improving generations exctinction occurs
 
 # Initialization of the necessary GA functions:
@@ -84,10 +84,6 @@ if __name__ == '__main__':
     fig_idx = 1
     # If we want to see how will the first layer nodes behave we have to uncomment
     # this piece of code:
-    params['individual'] = 1*C*np.random.random(indivsize)
-    params['signals'] = params['test_dataset'][0][0]
-    y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3) 
-    plot_inputs(y, params['signals'][:, -30000:], params, t, newfolder)
     with Pool(processes=par_processes) as piscina:
         # Running GA
         maxfits, avgfits, bestsols, ext_gens = galgs.main_DEAP_extinction(num_generations,
@@ -116,5 +112,10 @@ if __name__ == '__main__':
         # Finally print the tests results and plot some of the dynamics
         solution = np.array(solution)
         params['individual'] = solution
-
-        galgs.test_solution(params, newfolder)
+        
+        params['signals'] = params['test_dataset'][0][0]
+        y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
+        modidx = int(params['tspan'][-1]-10)*1000
+        plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
+        plot_fftoutputs(y, params, newfolder)
+        galgs.test_solution(params, newfolder, whatplot='inout')

@@ -130,7 +130,6 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
 
     return maxfits, avgfits, bestsols
 
-# PyGAD algorithm. Not used anymore.
 
 def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, parallel, L, pool=None, v=2):
     '''
@@ -229,7 +228,7 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
         if gens_passed_after_ext  > L:
             extinction = True
             for ffit in overall_fit[i-L+1:]:# We check if one of the last L-1 best fitnesses is bigger than the fitness L generations before
-                if ffit > 1.2*overall_fit[i-L]:
+                if np.abs(ffit) > np.abs(1.2*overall_fit[i-L]):
                     # If only one of the last fitnesses is 20% than the first one of the L before the actual generations, no extinction
                     extinction = False
 

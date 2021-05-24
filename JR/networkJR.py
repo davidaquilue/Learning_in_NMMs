@@ -4,7 +4,7 @@ Functions included: unpackingNET_V1, derivativesNET_V1, couplingval_V1, individu
 couplingval_V2, unpackingNET_V3, derivativesNET_V3, HeunNet, obtaindynamicsNET '''
 
 from numba import njit
-from matfuns import S, networkmatrix
+from matfuns import S, networkmatrix, findlayer
 import numpy as np
 usefastmath = True
 
@@ -225,18 +225,33 @@ def derivativesNET_V3(inp, t, paramtup, n):
         y1 = x[3]
         z2 = x[4]
         y2 = x[5]
-        pbar = np.random.uniform(120,360)
+        pbar = np.random.uniform(120, 360)
+        # The following lines of code are just a test to see if it is possible
+        # for one of the layers to oscillate at a different rhythm
+        a = paramtup[3]
+        b = paramtup[4]
+        C1 = paramtup[7]
+        C2 = 0.8*C1
+        C3 = 0.25*C1
+        C4 = 0.25*C1
+        if findlayer(nn, tuplenetwork) == 2:
+            a = 190
+            b = 190
+            C1 = 300
+            C2 = 0.8*C1
+            C3 = 0.25*C1
+            C4 = 0.25*C1
         # Coupled intensities, we obtain them from a function.
         pa, pb = couplingval_V2(inp, weights_exc[nn], weights_inh[nn], C3, e0, r, v0, nn, tuplenetwork, Nnodes)
 
         if nn in forcednodes:
             pbar = signals[nn, n]
         # Derivatives of each variable.
-        dz0 = A*a*S(y1-y2,e0,r,v0) - 2*a*z0 - a**2*y0
+        dz0 = A*a*S(y1-y2, e0, r, v0) - 2*a*z0 - a**2*y0
         dy0 = z0
-        dz1 = A*a*(pbar + C2*S(C1*y0,e0,r,v0) + pa) - a**2*y1 - 2*a*z1 
+        dz1 = A*a*(pbar + C2*S(C1*y0, e0, r, v0) + pa) - a**2*y1 - 2*a*z1 
         dy1 = z1
-        dz2 = B*b*(C4*S(C3*y0,e0,r,v0)+ pb) - 2*b*z2 - b**2*y2
+        dz2 = B*b*(C4*S(C3*y0, e0, r, v0) + pb) - 2*b*z2 - b**2*y2
         dy2 = z2
         dz[nn] = np.array([dz0, dy0, dz1, dy1, dz2, dy2])
     return dz

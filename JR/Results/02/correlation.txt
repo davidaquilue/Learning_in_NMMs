@@ -1,0 +1,36 @@
+0 pair, 0 element in the set: 
+Nodes 23 and 24 should be synchronized:
+Correlation 23 with 24: 0.39851866779106515
+Correlation 23 with 25: 0.4444322276849674
+Correlation 24 with 25: 0.4898347794781325
+ 
+0 pair, 1 element in the set: 
+Nodes 23 and 24 should be synchronized:
+Correlation 23 with 24: 0.3457582699353745
+Correlation 23 with 25: 0.24609706788808697
+Correlation 24 with 25: 0.470540320629244
+ 
+1 pair, 0 element in the set: 
+Nodes 23 and 25 should be synchronized:
+Correlation 23 with 24: 0.12391973285204909
+Correlation 23 with 25: 0.34774579893914487
+Correlation 24 with 25: 0.17870414059003514
+ 
+1 pair, 1 element in the set: 
+Nodes 23 and 25 should be synchronized:
+Correlation 23 with 24: 0.2935248648452539
+Correlation 23 with 25: 0.3492872580170319
+Correlation 24 with 25: 0.4263370845448418
+ 
+2 pair, 0 element in the set: 
+Nodes 24 and 25 should be synchronized:
+Correlation 23 with 24: 0.5810311540335272
+Correlation 23 with 25: 0.632407446496245
+Correlation 24 with 25: 0.4946063083796865
+ 
+2 pair, 1 element in the set: 
+Nodes 24 and 25 should be synchronized:
+Correlation 23 with 24: 0.45674803542256714
+Correlation 23 with 25: 0.4333232707738263
+Correlation 24 with 25: 0.5882142327315366
+ 
