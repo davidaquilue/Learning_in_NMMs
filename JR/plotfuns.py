@@ -1,12 +1,12 @@
-'''Plotting functions.
+"""Plotting functions.
 
 Functions included: plot3x3, plot3x3_signals, plotanynet, plotcouplings3x3, plotcouplings3x3V2, plotgenfit,
-plot_bestind_normevol '''
+plot_bestind_normevol"""
 
 #import matplotlib
 #matplotlib.use('Agg')
 from matplotlib import cm
-from matfuns import psd, findlayer
+from matfuns import psd, findlayer, fastcrosscorrelation as ccross
 import numpy as np
 import matplotlib.pyplot as plt
 from networkJR import individual_to_weights
@@ -17,8 +17,9 @@ labelticksize = 15
 titlefontsize = 20
 suptitlefontsize = 26
 
-def plot3x3(y,t, span, tstep):
-    ''' 
+
+def plot3x3(y, t, span, tstep):
+    """
     Plots the dynamics of a 3x3x3 network of cortical columns. First layer red, second blue and third green. N_nodes = 9
     Inputs:
     y:      Vector shaped (N_nodes, nsteps) where y[i,nsteps] represents the PSP of the pyramidal population of column i
@@ -31,51 +32,56 @@ def plot3x3(y,t, span, tstep):
                 fig.savefig(saving)
     span:   If 'large', 7 seconds of dynamics are presented, if 'small', 3 seconds. Enough for alpha rhythms
     tstep:  Timestep in the simulations, used to obtain the maxima of PSD of each node.
-    '''
-    fig, axes = plt.subplots(nrows = 3, ncols = 3)
+    """
+    fig, axes = plt.subplots(nrows=3, ncols=3)
     fig.subplots_adjust(hspace=0.5)
     fig.set_figheight(2*3)
     fig.set_figwidth(12)
     # Maybe this should be always fixed so we always work in the same span.
-    yspan = (np.min(y)-1,np.max(y)+1)
+    yspan = (np.min(y)-1, np.max(y)+1)
 
     if span == 'large':
-        xspan = (t[-7001],t[-1])
+        xspan = (t[-7001], t[-1])
     elif span == 'small':
-        xspan = (t[-3000],t[-1])
+        xspan = (t[-3000], t[-1])
 
-    p1 = 0; p2 = 0; p3 = 0
+    p1 = 0
+    p2 = 0
+    p3 = 0
     for ii in range(9):
         yy = y[ii]
-        f, PSD = psd(yy,tstep)
+        f, PSD = psd(yy, tstep)
         maxf = np.abs(f[np.argmax(PSD)])
         lab = 'Node: ' + str(ii)
         if ii < 3:
-            ax = axes[p1,0]; p1 = p1+1
-            ax.plot(t, yy, 'r', label = lab)
-            ax.set(xlim = xspan, ylim = yspan)
-            ax.set_xlabel(r'time (s)', fontsize = labelfontsize)
-            ax.set_ylabel(r'$y_1-y_2$', fontsize = labelfontsize)
-            ax.set_title(r'max of PSD f = %g Hz' %maxf)
-            ax.tick_params(labelsize = labelticksize)
+            ax = axes[p1, 0]
+            p1 = p1+1
+            ax.plot(t, yy, 'r', label=lab)
+            ax.set(xlim=xspan, ylim=yspan)
+            ax.set_xlabel(r'time (s)', fontsize=labelfontsize)
+            ax.set_ylabel(r'$y_1-y_2$', fontsize=labelfontsize)
+            ax.set_title(r'max of PSD f = %g Hz' % maxf)
+            ax.tick_params(labelsize=labelticksize)
 
         elif ii >= 3 and ii < 6:
-            ax = axes[p2,1]; p2 = p2+1
-            ax.plot(t, yy,'b', label = lab)
-            ax.set(xlim = xspan, ylim = yspan)
-            ax.set_xlabel(r'time (s)', fontsize = labelfontsize)
-            ax.set_ylabel(r'$y_1-y_2$', fontsize = labelfontsize)
-            ax.set_title(r'max of PSD f = %g Hz' %maxf)
-            ax.tick_params(labelsize = labelticksize)
+            ax = axes[p2, 1]
+            p2 = p2+1
+            ax.plot(t, yy, 'b', label=lab)
+            ax.set(xlim=xspan, ylim=yspan)
+            ax.set_xlabel(r'time (s)', fontsize=labelfontsize)
+            ax.set_ylabel(r'$y_1-y_2$', fontsize=labelfontsize)
+            ax.set_title(r'max of PSD f = %g Hz' % maxf)
+            ax.tick_params(labelsize=labelticksize)
             
         else:
-            ax = axes[p3,2]; p3 = p3+1
-            ax.plot(t, yy,'g', label = lab)
-            ax.set(xlim = xspan, ylim = yspan)
-            ax.set_xlabel(r'time (s)', fontsize = labelfontsize)
-            ax.set_ylabel(r'$y_1-y_2$', fontsize = labelfontsize)
-            ax.set_title(r'max of PSD f = %g Hz' %maxf)
-            ax.tick_params(labelsize = labelticksize)
+            ax = axes[p3, 2]
+            p3 = p3+1
+            ax.plot(t, yy, 'g', label=lab)
+            ax.set(xlim=xspan, ylim=yspan)
+            ax.set_xlabel(r'time (s)', fontsize=labelfontsize)
+            ax.set_ylabel(r'$y_1-y_2$', fontsize=labelfontsize)
+            ax.set_title(r'max of PSD f = %g Hz' % maxf)
+            ax.tick_params(labelsize=labelticksize)
 
     plt.tight_layout()
     # So that we can save it if we want:
@@ -83,58 +89,63 @@ def plot3x3(y,t, span, tstep):
 
 
 def plot3x3_signals(y,t, span, tstep, signals):
-    ''' 
+    """
     Plots the dynamics of a 3x3x3 network of cortical columns. First layer red, second blue and third green. N_nodes = 9
     Inputs:
     y:      Vector shaped (N_nodes, nsteps) where y[i,nsteps] represents the PSP of the pyramidal population of column i
     t:      Time vector
     span:   If 'large', 7 seconds of dynamics are presented, if 'small', 3 seconds. Enough for alpha rhythms
     tstep:  Timestep in the simulations, used to obtain the maxima of PSD of each node.
-    '''
-    fig, axes = plt.subplots(nrows = 3, ncols = 4)
+    """
+    fig, axes = plt.subplots(nrows=3, ncols=4)
     fig.subplots_adjust(hspace=0.5)
     fig.set_figheight(2*3)
     fig.set_figwidth(12)
     # Maybe this should be always fixed so we always work in the same span.
-    yspan = (np.min(y)-1,np.max(y)+1)
+    yspan = (np.min(y)-1, np.max(y)+1)
 
     if span == 'large':
-        xspan = (t[-7001],t[-1])
+        xspan = (t[-7001], t[-1])
     elif span == 'small':
-        xspan = (t[-3000],t[-1])
+        xspan = (t[-3000], t[-1])
     
     p1 = 0
     for ii in range(3):
-        ax = axes[ii, 0]; p1 = p1+1
+        ax = axes[ii, 0]
+        p1 = p1+1
         ax.plot(t[-10000:], signals[ii, -10000:], 'k')
-        ax.set(xlim = xspan, ylim = (np.amin(signals[ii]), 1.3*np.amax(signals[ii])))
-        ax.set_xlabel(r'time (s)', fontsize = labelfontsize)
-        ax.set_ylabel(r'$Hz$', fontsize = labelfontsize)
-        ax.tick_params(labelsize = labelticksize)
+        ax.set(xlim=xspan, ylim=(np.amin(signals[ii]), 1.3*np.amax(signals[ii])))
+        ax.set_xlabel(r'time (s)', fontsize=labelfontsize)
+        ax.set_ylabel(r'$Hz$', fontsize=labelfontsize)
+        ax.tick_params(labelsize=labelticksize)
 
-    p1 = 0; p2 = 0; p3 = 0
+    p1 = 0
+    p2 = 0
+    p3 = 0
     for ii in range(9):
         yy = y[ii]
-        f, PSD = psd(yy,tstep)
+        f, PSD = psd(yy, tstep)
         maxf = np.abs(f[np.argmax(PSD)])
         lab = 'Node: ' + str(ii)
         if ii < 3:
-            ax = axes[p1,1]; p1 = p1+1
-            ax.plot(t, yy, 'r', label = lab)
-            ax.set(xlim = xspan, ylim = yspan)
-            ax.set_xlabel(r'time (s)', fontsize = labelfontsize)
-            ax.set_ylabel(r'$y_1-y_2$', fontsize = labelfontsize)
-            ax.set_title(r'max of PSD f = %g Hz' %maxf)
-            ax.tick_params(labelsize = labelticksize)
+            ax = axes[p1, 1]
+            p1 = p1+1
+            ax.plot(t, yy, 'r', label=lab)
+            ax.set(xlim=xspan, ylim=yspan)
+            ax.set_xlabel(r'time (s)', fontsize=labelfontsize)
+            ax.set_ylabel(r'$y_1-y_2$', fontsize=labelfontsize)
+            ax.set_title(r'max of PSD f = %g Hz' % maxf)
+            ax.tick_params(labelsize=labelticksize)
 
         elif ii >= 3 and ii < 6:
-            ax = axes[p2,2]; p2 = p2+1
-            ax.plot(t, yy,'b', label = lab)
-            ax.set(xlim = xspan, ylim = yspan)
-            ax.set_xlabel(r'time (s)', fontsize = labelfontsize)
-            ax.set_ylabel(r'$y_1-y_2$', fontsize = labelfontsize)
-            ax.set_title(r'max of PSD f = %g Hz' %maxf)
-            ax.tick_params(labelsize = labelticksize)
+            ax = axes[p2, 2]
+            p2 = p2+1
+            ax.plot(t, yy, 'b', label=lab)
+            ax.set(xlim=xspan, ylim=yspan)
+            ax.set_xlabel(r'time (s)', fontsize=labelfontsize)
+            ax.set_ylabel(r'$y_1-y_2$', fontsize=labelfontsize)
+            ax.set_title(r'max of PSD f = %g Hz' % maxf)
+            ax.tick_params(labelsize=labelticksize)
             
         else:
             ax = axes[p3,3]; p3 = p3+1
@@ -147,6 +158,67 @@ def plot3x3_signals(y,t, span, tstep, signals):
 
     plt.tight_layout()
     # So that we can save it if we want:
+    return fig
+
+
+def plot_363(y, t, span, params, signals):
+    if span == 'large':
+        xspan = (t[-50001], t[-1])
+    elif span == 'small':
+        xspan = (t[-20000], t[-1])
+    yspan = (np.min(y)-1, np.max(y)+1)
+
+    fig = plt.figure(figsize=(26, 15))
+    # Set up the axis
+    # Señales
+    axp0 = fig.add_subplot(5, 4, 5)
+    axp1 = fig.add_subplot(5, 4, 9)
+    axp2 = fig.add_subplot(5, 4, 13)
+    # Primera capa
+    ax0 = fig.add_subplot(5, 4, 6)
+    ax1 = fig.add_subplot(5, 4, 10)
+    ax2 = fig.add_subplot(5, 4, 14)
+    # Outputs
+    ax9 = fig.add_subplot(5, 4, 8)
+    ax10 = fig.add_subplot(5, 4, 12)
+    ax11 = fig.add_subplot(5, 4, 16)
+    # Capa del medio
+    ax3 = fig.add_subplot(6, 4, 3)
+    ax4 = fig.add_subplot(6, 4, 7)
+    ax5 = fig.add_subplot(6, 4, 11)
+    ax6 = fig.add_subplot(6, 4, 15)
+    ax7 = fig.add_subplot(6, 4, 19)
+    ax8 = fig.add_subplot(6, 4, 23)
+    axesp = [axp0, axp1, axp2]
+    axesy = [ax0, ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9, ax10, ax11]
+
+    for ii in range(signals.shape[0]):
+        ax = axesp[ii]
+        ax.plot(t[-(t.size-10000):], signals[ii, -(t.size-10000):], 'k')
+        ax.set(xlim=xspan, ylim=(np.amin(signals[ii]), 1.3 * np.amax(signals[ii])), ylabel='$Hz$')
+        ax.tick_params(labelsize=labelticksize)
+        ax.grid(True)
+        if ii != signals.shape[0]-1:
+            ax.xaxis.set_ticklabels([])
+        else:
+            ax.set(xlabel='time(s)')
+        if ii == 0:
+            ax.set(title='Input signal $p(t)$')
+
+    for ii in range(params['Nnodes']):
+        layerii = findlayer(ii, params['tuplenetwork'])
+        ax = axesy[ii]
+        ax.plot(t, y[ii], color=cm.tab10(layerii))
+        ax.set(xlim=xspan, ylim=yspan, ylabel='$y_1 - y_2$')
+        ax.tick_params(labelsize=labelticksize)
+        ax.grid(True)
+        if ii == 2 or ii == 8 or ii == 11:
+            ax.set(xlabel='time(s)')
+        else:
+            ax.xaxis.set_ticklabels([])
+        if ii == 0 or ii == 3 or ii == 9:
+            ax.set_title('Layer %i' % layerii)
+
     return fig
 
 
@@ -290,23 +362,23 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
      with best fitness."""
     fig, axes = plt.subplots(1, 2, figsize=(10, 6))
     weights_exc, weights_inh = individual_to_weights(solution, matrix_exc, matrix_inh)
+    nnodes = matrix_exc.shape[0]
+    ticks = np.linspace(0, nnodes-1, nnodes)
+
     ax = axes[0]
     ax.imshow(weights_exc, vmin=maxminvals[0], vmax=maxminvals[1])
-    ax.set_title('Excitatory Coupling Coefficients')
-    ax.set_xlabel('Node')
-    ax.set_ylabel('Node')
+    ax.set(title='Excitatory Coupling Coefficients', xlabel='Post-Synaptic Node', ylabel='Pre-Synaptic Node',
+           xticks=ticks, yticks=ticks)
     ax = axes[1]
     im = ax.imshow(weights_inh, vmin=maxminvals[0], vmax=maxminvals[1])
-    ax.set_title('Inhibitory Coupling Coefficients')
-    ax.set_xlabel('Node')
-    ax.set_ylabel('Node')
+    ax.set(title='Excitatory Coupling Coefficients', xlabel='Post-Synaptic Node', ylabel='Pre-Synaptic Node',
+           xticks=ticks, yticks=ticks)
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(im, cax=cbar_ax)
-
     return fig
 
-# Plotting GA results:
+
 def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_generations = [], v = 1):
     '''Returns the plot of the highest and average fitnesses per generation. Additionally 
     indicates extinctions and the best individual's fitnesses'''
@@ -333,6 +405,7 @@ def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_g
     ax.legend(bbox_to_anchor = (1.04,1), borderaxespad=0)
     plt.tight_layout()
     return fig
+
 
 def plot_bestind_normevol(bestsols, num_generations, params):
     # MODIFY THIS FUNCTION TO SHOW THE DIFFERENCES BETWEEN EXCITATORY AND INHI
@@ -393,3 +466,114 @@ def plot_fftoutputs(y, params, newfolder):
         axes[ii].plot(f, psds)
         axes[ii].set(xlim = (0, 40))
     fig.savefig(newfolder + '/fftinputs.png')
+
+
+def plot_corrs(y, params):  # Mes endavant ja fare que es guardi en un folder si la necessito
+    nnodes = params['Nnodes']
+    corr_array = np.zeros((nnodes, nnodes))
+    tickslab = []
+    for ii in range(nnodes):
+        tickslab.append('y' + str(ii))
+        for jj in range(nnodes):
+            corr_array[ii, jj] = ccross(y[ii], y[jj], int((params['tspan'][-1]-20)/params['tstep']))
+
+    fig, ax = plt.subplots(1, 1)
+    im = ax.imshow(corr_array, vmin=0, vmax=1)
+    ticks = np.linspace(0, nnodes-1, nnodes)
+    ax.set(xticks=ticks, xticklabels=tickslab, yticks=ticks, yticklabels=tickslab,
+           title='Cross-correlations between nodes')
+    fig.colorbar(im)
+
+    return fig
+
+
+def draw_neural_net(ax, left, right, bottom, top, layer_sizes, conn_matrix, maxvalue, bandw = False):
+    """
+    Draw a neural network cartoon using matplotilb.
+
+    :usage:
+        fig = plt.figure(figsize=(12, 12))
+        draw_neural_net(fig.gca(), .1, .9, .1, .9, [4, 7, 2])
+
+    :parameters:
+        - ax : matplotlib.axes.AxesSubplot
+            The axes on which to plot the cartoon (get e.g. by plt.gca())
+        - left : float
+            The center of the leftmost node(s) will be placed here
+        - right : float
+            The center of the rightmost node(s) will be placed here
+        - bottom : float
+            The center of the bottommost node(s) will be placed here
+        - top : float
+            The center of the topmost node(s) will be placed here
+        - layer_sizes : list of int
+            List of layer sizes, including input and output dimensionality
+    """
+    n_layers = len(layer_sizes)
+    cmap = cm.get_cmap('viridis')
+    v_spacing = (top - bottom) / float(max(layer_sizes))
+    h_spacing = (right - left) / float(len(layer_sizes) - 1)
+    # Nodes
+    for n, layer_size in enumerate(layer_sizes):
+        layer_top = v_spacing * (layer_size - 1) / 2. + (top + bottom) / 2.
+        for m in range(layer_size):
+            circle = plt.Circle((n * h_spacing + left, layer_top - m * v_spacing), v_spacing / 4.,
+                                color='w', ec=cm.tab10(n), zorder=4, lw=3)
+            ax.add_artist(circle)
+    # Edges
+    init_o = 0
+    init_m = 0
+    for n, (layer_size_a, layer_size_b) in enumerate(zip(layer_sizes[:-1], layer_sizes[1:])):
+        layer_top_a = v_spacing * (layer_size_a - 1) / 2. + (top + bottom) / 2.
+        layer_top_b = v_spacing * (layer_size_b - 1) / 2. + (top + bottom) / 2.
+        init_o += layer_sizes[n]
+        for m in range(layer_size_a):
+            for o in range(layer_size_b):
+                if bandw:
+                    color = str(1 - conn_matrix[init_o + o, init_m + m]/maxvalue)
+                else:
+                    color = cmap(conn_matrix[init_o + o, init_m + m]/maxvalue)
+                if bandw and float(color) > 0.95:
+                    continue
+                line = plt.Line2D([n * h_spacing + left, (n + 1) * h_spacing + left],
+                                  [layer_top_a - m * v_spacing, layer_top_b - o * v_spacing], c=color)
+                ax.add_artist(line)
+
+        init_m += layer_size_a
+
+    return ax
+
+
+def plotcouplings(solution, matrix_exc, matrix_inh, minmaxvals, params, bandw=False):
+    """Returns an imshow of the excitatory and inhibitory weight matrix plus the network diagrams. solution is
+    the vector of the individiual with best fitness."""
+    fig, axes = plt.subplots(2, 2, figsize=(10, 20))
+    weights_exc, weights_inh = individual_to_weights(solution, matrix_exc, matrix_inh)
+    nnodes = matrix_exc.shape[0]
+    ticks = np.linspace(0, nnodes-1, nnodes)
+    if bandw:
+        colormap = cm.get_cmap('Greys')
+    else:
+        colormap = cm.get_cmap('viridis')
+    ax = axes[0, 0]
+    ax.imshow(weights_exc, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
+    ax.set(title='Excitatory Coupling Coefficients', xlabel='Post-Synaptic Node', ylabel='Pre-Synaptic Node',
+           xticks=ticks, yticks=ticks)
+    ax = axes[0, 1]
+    im = ax.imshow(weights_inh, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
+    ax.set(title='Inhibitory Coupling Coefficients', xlabel='Post-Synaptic Node', ylabel='Pre-Synaptic Node',
+           xticks=ticks, yticks=ticks)
+    fig.subplots_adjust(right=0.8)
+    cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+    fig.colorbar(im, cax=cbar_ax)
+
+    ax = axes[1, 0]
+    draw_neural_net(ax, 0.1, 0.9, 0.1, 0.9, params['tuplenetwork'], weights_exc, minmaxvals[1], bandw)
+    ax.axis('off')
+    ax.set(title='Network diagram of excitatory weights')
+
+    ax = axes[1, 1]
+    draw_neural_net(ax, 0.1, 0.9, 0.1, 0.9, params['tuplenetwork'], weights_inh, minmaxvals[1], bandw)
+    ax.axis('off')
+    ax.set(title='Network diagram of inhibitory weights')
+    return fig

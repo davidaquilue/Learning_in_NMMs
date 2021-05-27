@@ -9,6 +9,7 @@ import numpy as np
 from numba import njit
 from itertools import combinations
 
+
 # MAIN FITNESS FUNCTION THAT WILL BE USED DURING THE DEVELOPMENT OF THE THESIS
 def fit_func_cross_V3(params, individual):
     params['individual'] = np.array(individual)  # Set of weights
@@ -24,20 +25,20 @@ def fit_func_cross_V3(params, individual):
         idxcomp1 = idx_nodes_lastlayer + pair[0]
         idxcomp2 = idx_nodes_lastlayer + pair[1]
         idxunsync = idx_nodes_lastlayer + unsync  # Idxs for the output layer
-        
+        steps_corr = int((params['tspan'][1] - params['tspan'][0] - 20)/params['tstep'])
         for nn in range(params['n']):
             params['signals'] = dataset[ii][nn]  # Extract the one needed from the dataset
             y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
-            cc0 = fastcrosscorrelation(y[idxcomp1], y[idxcomp2], 50000)
-            cc1 = fastcrosscorrelation(y[idxcomp1], y[idxunsync], 50000)
-            cc2 = fastcrosscorrelation(y[idxunsync], y[idxcomp2], 50000)
+            cc0 = fastcrosscorrelation(y[idxcomp1], y[idxcomp2], steps_corr)
+            cc1 = fastcrosscorrelation(y[idxcomp1], y[idxunsync], steps_corr)
+            cc2 = fastcrosscorrelation(y[idxunsync], y[idxcomp2], steps_corr)
 
             if ii == 0:
-                fit0 += cc0  # - (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+                fit0 += cc0 - (cc1+cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
             elif ii == 1:
-                fit1 += cc0  # - (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+                fit1 += cc0 - (cc1+cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
             else:
-                fit2 += cc0  # - (cc1+cc2)/2  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+                fit2 += cc0 - (cc1+cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
 
     return fit0/(maxf*n), fit1/(maxf*n), fit2/(maxf*n)
 

@@ -1,9 +1,9 @@
-'''Main Script. It runs the Genetic Algorithm and Saves the results. Modifications should be
-performed in this module's code.'''
+"""Main Script. It runs the Genetic Algorithm and Saves the results. Modifications should be
+performed in this module's code."""
 
 from multiprocessing import Pool
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -29,7 +29,7 @@ params['delta'] = 72.09
 params['f'] = 8.6
 
 # NETWORK ARCHITECTURE PARAMETERS
-params['tuplenetwork'] = (3, 3, 3, 3)
+params['tuplenetwork'] = (3, 6, 3)
 params['recurrent'] = False
 params['forcednodes'] = (0, 1, 2)
 
@@ -41,28 +41,25 @@ params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
 params['tstep'] = 0.001
-params['tspan'] = (0, 70)
+params['tspan'] = (0, 300)
 
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
 
-params['pairs'] = ((0, 1), (1, 2), (0, 2))  # Pairs of correlated first layer nodes
+params['pairs'] = ((1, 2), (0, 2), (0, 1))  # Pairs of correlated first layer nodes
 idx = params['Nnodes'] - params['tuplenetwork'][-1]
 params['output_pairs'] = ((idx+0, idx+1), (idx+0, idx+2), (idx+1, idx+2)) # THIS LINE EITHER USE IT OR DELETE IT
 
-params['unsync'] = (2, 1, 0)    # This line either use it or delete it
+params['unsync'] = (0, 1, 2)    # This line either use it or delete it
 params['n'] = 30  # Amount of elements in the training set, at least 10
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
-                                 params['pairs'], t, offset=320, shift=True)
+                                        params['pairs'], t, offset=10)
 params['test_dataset'] = build_dataset(int(0.1*params['n']),
                                        params['tuplenetwork'][0],
-                                       params['pairs'], t, offset=320, shift=True)
-
-
-
+                                       params['pairs'], t, offset=10)
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
-num_generations = 150
+num_generations = 10
 popsize = 38        # Population size
 mutindprob = 0.2    # Probability that an individual undergoes mutation
 coprob = 0.5        # Crossover probability

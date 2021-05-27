@@ -225,7 +225,7 @@ def derivativesNET_V3(inp, t, paramtup, n):
         y1 = x[3]
         z2 = x[4]
         y2 = x[5]
-        pbar = np.random.uniform(120, 130)
+        pbar = np.random.uniform(120, 240)
         """
         # The following lines of code are just a test to see if it is possible
         # for one of the layers to oscillate at a different rhythm

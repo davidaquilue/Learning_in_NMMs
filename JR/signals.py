@@ -12,7 +12,7 @@ from singleJR import unpacking_signal, derivatives_signal, obtaindynamics
 from filefuns import get_num
 
 
-def p_times(tspan, lens=(10, 15, 20)):
+def p_times(tspan, lens=(12, 17, 23)):
     """Returns a list of the times at which there is a change in value."""
     time = tspan[0] + random.choice(lens)
     time_order = [time]
