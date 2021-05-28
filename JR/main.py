@@ -16,7 +16,7 @@ from signals import build_dataset
 import galgs
 
 # JR MODEL PARAMETERS
-params = {'A': 3.25, 'B': 22.0, 'v0': 6.0}
+params = dict(A=3.25, B=22.0, v0=6.0)
 params['a'], params['b'], params['e0'] = 100.0, 50.0, 2.5
 params['pbar'], params['delta'], params['f'] = 155.0, 65.0, 8.5
 
@@ -33,7 +33,7 @@ params['tuplenetwork'] = (3, 6, 3)
 params['recurrent'] = False
 params['forcednodes'] = (0, 1, 2)
 
-Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v=0)  # v indicates which of the weight tests one wants to perform
+Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v=0)
 # (see the function in the matfuns script for further information on the tests)
 indivsize = np.count_nonzero(matrix_exc) + np.count_nonzero(matrix_inh)
 
@@ -46,11 +46,11 @@ params['tspan'] = (0, 300)
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
 
-params['pairs'] = ((1, 2), (0, 2), (0, 1))  # Pairs of correlated first layer nodes
+params['pairs'] = ((1, 2),)  # , (0, 2), (0, 1))  # Pairs of correlated first layer nodes
 idx = params['Nnodes'] - params['tuplenetwork'][-1]
-params['output_pairs'] = ((idx+0, idx+1), (idx+0, idx+2), (idx+1, idx+2)) # THIS LINE EITHER USE IT OR DELETE IT
+params['output_pairs'] = ((idx+0, idx+1))  # , (idx+0, idx+2), (idx+1, idx+2)) # THIS LINE EITHER USE IT OR DELETE IT
 
-params['unsync'] = (0, 1, 2)    # This line either use it or delete it
+params['unsync'] = (0)  # , 1, 2)    # This line either use it or delete it
 params['n'] = 30  # Amount of elements in the training set, at least 10
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
                                         params['pairs'], t, offset=10)
@@ -58,15 +58,22 @@ params['test_dataset'] = build_dataset(int(0.1*params['n']),
                                        params['tuplenetwork'][0],
                                        params['pairs'], t, offset=10)
 
+print(len(params['train_dataset']))
+print(params['train_dataset'][0].shape)
+
+print(len(params['test_dataset']))
+print(params['test_dataset'][0].shape)
+
+
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
-num_generations = 10
+num_generations = 150
 popsize = 38        # Population size
 mutindprob = 0.2    # Probability that an individual undergoes mutation
 coprob = 0.5        # Crossover probability
 maxgene = 1*C       # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
 par_processes = 38  # How many cores will be used in order to parallelize the GA.
-L = 15		        # After how many non-improving generations exctinction occurs
+L = 50              # After how many non-improving generations exctinction occurs
 
 # Initialization of the necessary GA functions:
 # this has to go before the if name = main and before running the algorithm.
@@ -110,9 +117,9 @@ if __name__ == '__main__':
         solution = np.array(solution)
         params['individual'] = solution
         
-        params['signals'] = params['test_dataset'][0][0]
-        y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
-        modidx = int(params['tspan'][-1]-10)*1000
-        plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
-        plot_fftoutputs(y, params, newfolder)
-        galgs.test_solution(params, newfolder, whatplot='inout')
+        #params['signals'] = params['test_dataset'][0][0]
+        #y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
+        #modidx = int(params['tspan'][-1]-10)*1000
+        #plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
+        #plot_fftoutputs(y, params, newfolder)
+        #galgs.test_solution(params, newfolder, whatplot='inout')
