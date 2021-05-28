@@ -1,0 +1,18 @@
+0 pair, 0 element in the set: 
+Nodes 9 and 10 should be synchronized:
+Correlation 9 with 10: 0.0011154269292463419
+Correlation 9 with 11: 0.004460279272481529
+Correlation 10 with 11: 0.4728306038601435
+ 
+1 pair, 0 element in the set: 
+Nodes 9 and 11 should be synchronized:
+Correlation 9 with 10: 0.03468557842690799
+Correlation 9 with 11: 0.0899521918637037
+Correlation 10 with 11: 0.29506618066536655
+ 
+2 pair, 0 element in the set: 
+Nodes 10 and 11 should be synchronized:
+Correlation 9 with 10: 0.027218530187636716
+Correlation 9 with 11: 0.3686800043611918
+Correlation 10 with 11: 0.1772050597416376
+ 

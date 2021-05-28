@@ -1,0 +1,54 @@
+0 pair, 0 element in the set: 
+Nodes 9 and 10 should be synchronized:
+Correlation 9 with 10: 0.8642679883350565
+Correlation 9 with 11: 0.002134468971770777
+Correlation 10 with 11: 0.0274853406379925
+ 
+0 pair, 1 element in the set: 
+Nodes 9 and 10 should be synchronized:
+Correlation 9 with 10: 0.7151962997726474
+Correlation 9 with 11: 0.0825147638789916
+Correlation 10 with 11: 0.04837728302326382
+ 
+0 pair, 2 element in the set: 
+Nodes 9 and 10 should be synchronized:
+Correlation 9 with 10: 0.44382291122598827
+Correlation 9 with 11: 0.05431488873211359
+Correlation 10 with 11: 0.05526295214948929
+ 
+1 pair, 0 element in the set: 
+Nodes 9 and 11 should be synchronized:
+Correlation 9 with 10: 0.4845898182104046
+Correlation 9 with 11: 0.14842875811881986
+Correlation 10 with 11: 0.1563215684168008
+ 
+1 pair, 1 element in the set: 
+Nodes 9 and 11 should be synchronized:
+Correlation 9 with 10: 0.9591356182567636
+Correlation 9 with 11: 0.10867446170399316
+Correlation 10 with 11: 0.11146463439813878
+ 
+1 pair, 2 element in the set: 
+Nodes 9 and 11 should be synchronized:
+Correlation 9 with 10: 0.6308633335043559
+Correlation 9 with 11: 0.016497593689514804
+Correlation 10 with 11: 0.03544057160919137
+ 
+2 pair, 0 element in the set: 
+Nodes 10 and 11 should be synchronized:
+Correlation 9 with 10: 0.7209192462570772
+Correlation 9 with 11: 0.04464956210528594
+Correlation 10 with 11: 0.019531667266929117
+ 
+2 pair, 1 element in the set: 
+Nodes 10 and 11 should be synchronized:
+Correlation 9 with 10: 0.6180097392624527
+Correlation 9 with 11: 0.052294678502184506
+Correlation 10 with 11: 0.036578970817017005
+ 
+2 pair, 2 element in the set: 
+Nodes 10 and 11 should be synchronized:
+Correlation 9 with 10: 0.44024509090588376
+Correlation 9 with 11: 0.024115224930265872
+Correlation 10 with 11: 0.01696297391603925
+ 

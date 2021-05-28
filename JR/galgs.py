@@ -276,9 +276,9 @@ def test_solution(params, newfolder, whatplot='inout', rangeplot ='large'):
             y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], 3)
 
             f.write('Nodes %i and %i should be synchronized:' % synch_pair)  #Saving results in file
-            f.write('\nCorrelation %i with %i: ' % outpairs[0] + str(ccross(y[outpairs[0][0]], y[outpairs[0][1]])))
-            f.write('\nCorrelation %i with %i: ' % outpairs[1] + str(ccross(y[outpairs[1][0]], y[outpairs[1][1]])))
-            f.write('\nCorrelation %i with %i: ' % outpairs[2] + str(ccross(y[outpairs[2][0]], y[outpairs[2][1]])) + '\n \n') 
+            f.write('\nCorrelation %i with %i: ' % (9, 10) + str(ccross(y[9], y[10])))
+            f.write('\nCorrelation %i with %i: ' % (9, 11) + str(ccross(y[9], y[11])))
+            f.write('\nCorrelation %i with %i: ' % (10, 11) + str(ccross(y[10], y[11])) + '\n \n') 
 
     # Then obtain the plots from the last element of the dataset. Maybe it
     # would be better to obtain the plot of the better classified element...
