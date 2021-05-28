@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from matfuns import networkmatrix, maxcrosscorrelation, creating_signals, networkmatrix_exc_inh, fastcrosscorrelation  # This last function will be used later on
-from plotfuns import plotcouplings3x3V2, plot3x3_signals, plot_genfit, plotanynet, plotinputsoutputs, plot_bestind_normevol, plot_inputs, plot_fftoutputs
+from plotfuns import plotcouplings, plot3x3_signals, plot_genfit, plotanynet, plotinputsoutputs, plot_bestind_normevol, plot_inputs, plot_fftoutputs
 from networkJR import obtaindynamicsNET
 from fitfuns import fit_func_cross_V3
 from filefuns import check_create_results_folder, test_folder
@@ -50,20 +50,13 @@ params['pairs'] = ((1, 2),)  # , (0, 2), (0, 1))  # Pairs of correlated first la
 idx = params['Nnodes'] - params['tuplenetwork'][-1]
 params['output_pairs'] = ((idx+0, idx+1))  # , (idx+0, idx+2), (idx+1, idx+2)) # THIS LINE EITHER USE IT OR DELETE IT
 
-params['unsync'] = (0)  # , 1, 2)    # This line either use it or delete it
-params['n'] = 30  # Amount of elements in the training set, at least 10
+params['unsync'] = (0, )  # , 1, 2)    # This line either use it or delete it
+params['n'] = 10  # Amount of elements in the training set, at least 10
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
                                         params['pairs'], t, offset=10)
 params['test_dataset'] = build_dataset(int(0.1*params['n']),
                                        params['tuplenetwork'][0],
                                        params['pairs'], t, offset=10)
-
-print(len(params['train_dataset']))
-print(params['train_dataset'][0].shape)
-
-print(len(params['test_dataset']))
-print(params['test_dataset'][0].shape)
-
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
 num_generations = 150
@@ -97,13 +90,14 @@ if __name__ == '__main__':
         maxfits_avg = np.mean(maxfits, axis=1)  # Mean of the different fitnesses
         best_indivs_gen = np.argmax(maxfits_avg)  # Generation of the optimal individual
         solution = bestsols[best_indivs_gen]  # Optimal individual
-
+        solution = np.array(solution)
         # Plot the maximum fitnesses and average fitnesses of each generation
         fig_genfit = plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, ext_gens, v=2)
         fig_genfit.savefig(newfolder + "/fitness.jpg")
         
         # Show the coupling matrices corresponding to the best individual of the evolution
-        fig_couplings = plotcouplings3x3V2(solution, params['matrix_exc'], params['matrix_inh'], (mingene, maxgene))
+        fig_couplings = plotcouplings(solution, params['matrix_exc'], params['matrix_inh'],
+                                      (mingene, np.amax(solution)), params, True)
         fig_couplings.savefig(newfolder + "/bestweights.jpg")
 
         # Plot the evolution of the norm of the best solution
@@ -114,12 +108,11 @@ if __name__ == '__main__':
         plt.show()
 
         # Finally print the tests results and plot some of the dynamics
-        solution = np.array(solution)
         params['individual'] = solution
         
-        #params['signals'] = params['test_dataset'][0][0]
+        params['signals'] = params['test_dataset'][0][0]
         #y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
         #modidx = int(params['tspan'][-1]-10)*1000
         #plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
         #plot_fftoutputs(y, params, newfolder)
-        #galgs.test_solution(params, newfolder, whatplot='inout')
+        galgs.test_solution(params, newfolder, whatplot='inout')

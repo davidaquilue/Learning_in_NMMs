@@ -88,7 +88,7 @@ def plot3x3(y, t, span, tstep):
     return fig
 
 
-def plot3x3_signals(y,t, span, tstep, signals):
+def plot3x3_signals(y, t, span, tstep, signals):
     """
     Plots the dynamics of a 3x3x3 network of cortical columns. First layer red, second blue and third green. N_nodes = 9
     Inputs:
@@ -367,11 +367,11 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
 
     ax = axes[0]
     ax.imshow(weights_exc, vmin=maxminvals[0], vmax=maxminvals[1])
-    ax.set(title='Excitatory Coupling Coefficients', xlabel='Post-Synaptic Node', ylabel='Pre-Synaptic Node',
+    ax.set(title='Excitatory Coupling Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
            xticks=ticks, yticks=ticks)
     ax = axes[1]
     im = ax.imshow(weights_inh, vmin=maxminvals[0], vmax=maxminvals[1])
-    ax.set(title='Excitatory Coupling Coefficients', xlabel='Post-Synaptic Node', ylabel='Pre-Synaptic Node',
+    ax.set(title='Excitatory Coupling Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
            xticks=ticks, yticks=ticks)
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
@@ -557,7 +557,7 @@ def plotcouplings(solution, matrix_exc, matrix_inh, minmaxvals, params, bandw=Fa
         colormap = cm.get_cmap('viridis')
     ax = axes[0, 0]
     ax.imshow(weights_exc, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
-    ax.set(title='Excitatory Coupling Coefficients', xlabel='Post-Synaptic Node', ylabel='Pre-Synaptic Node',
+    ax.set(title='Excitatory Coupling Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
            xticks=ticks, yticks=ticks)
     ax.set_xticks(np.arange(-.5, params['Nnodes']-1, 1), minor=True)
     ax.set_yticks(np.arange(-.5, params['Nnodes']-1, 1), minor=True)
@@ -565,7 +565,7 @@ def plotcouplings(solution, matrix_exc, matrix_inh, minmaxvals, params, bandw=Fa
 
     ax = axes[0, 1]
     im = ax.imshow(weights_inh, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
-    ax.set(title='Inhibitory Coupling Coefficients', xlabel='Post-Synaptic Node', ylabel='Pre-Synaptic Node',
+    ax.set(title='Inhibitory Coupling Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
            xticks=ticks, yticks=ticks)
     ax.set_xticks(np.arange(-.5, params['Nnodes'] - 1, 1), minor=True)
     ax.set_yticks(np.arange(-.5, params['Nnodes'] - 1, 1), minor=True)
