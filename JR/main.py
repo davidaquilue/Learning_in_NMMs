@@ -3,7 +3,6 @@ performed in this module's code."""
 
 from multiprocessing import Pool
 import matplotlib
-matplotlib.use('Agg')
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -14,6 +13,7 @@ from fitfuns import fit_func_cross_V3
 from filefuns import check_create_results_folder, test_folder
 from signals import build_dataset
 import galgs
+matplotlib.use('Agg')
 
 # JR MODEL PARAMETERS
 params = dict(A=3.25, B=22.0, v0=6.0)
@@ -48,9 +48,11 @@ t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] 
 
 params['pairs'] = ((1, 2),)  # , (0, 2), (0, 1))  # Pairs of correlated first layer nodes
 idx = params['Nnodes'] - params['tuplenetwork'][-1]
-params['output_pairs'] = ((idx+0, idx+1), )  # , (idx+0, idx+2), (idx+1, idx+2)) # THIS LINE EITHER USE IT OR DELETE IT
 
-params['unsync'] = (0, )  # , 1, 2)    # This line either use it or delete it
+params['output_pairs'] = tuple([(idx + pair[0], idx + pair[1]) for pair in params['pairs']])
+# Correlated nodes at the output, basically: ((10, 11), (9, 11), (9,10)) with more freedom
+
+params['unsync'] = (0, )  # , 1, 2) # Unsynchronized nodes, have to align with the correlated pairs.
 params['n'] = 10  # Amount of elements in the training set, at least 10
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
                                         params['pairs'], t, offset=10)
@@ -63,7 +65,7 @@ num_generations = 150
 popsize = 38        # Population size
 mutindprob = 0.2    # Probability that an individual undergoes mutation
 coprob = 0.5        # Crossover probability
-maxgene = 0.3*C       # Maximum coupling value of a connection
+maxgene = 0.05*C       # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
 par_processes = 38  # How many cores will be used in order to parallelize the GA.
 L = 50              # After how many non-improving generations exctinction occurs
@@ -111,8 +113,8 @@ if __name__ == '__main__':
         params['individual'] = solution
         
         params['signals'] = params['test_dataset'][0][0]
-        #y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
-        #modidx = int(params['tspan'][-1]-10)*1000
-        #plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
-        #plot_fftoutputs(y, params, newfolder)
-        galgs.test_solution(params, newfolder, whatplot='any')
+        y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
+        modidx = int(params['tspan'][-1]-10)*1000
+        plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
+        plot_fftoutputs(y, params, newfolder)
+        galgs.test_solution(params, newfolder, whatplot='net')

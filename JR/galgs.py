@@ -5,7 +5,7 @@ from deap import base, creator, tools
 from tqdm import tqdm
 from matfuns import fastcrosscorrelation as ccross
 from networkJR import obtaindynamicsNET
-from plotfuns import plotanynet, plotinputsoutputs
+from plotfuns import plot_363, plotinputsoutputs
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -235,7 +235,7 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
             if extinction:
                 pop = toolbox.population(n = popsize) # We rewrite the population with newly generated individuals
                 pop[0] = creator.Individual(bestsols[i, :].tolist())  # But the first of the individuals will be the best solution of the generation before extinction
-		# It's important to use the creator individual so that it will have the same attributes of before
+                # It's important to use the creator individual so that it will have the same attributes of before
                 # Same process as before.
                 fitnesses = list(toolbox.map(toolbox.evaluate, pop))
                 for ind, fit in zip(pop, fitnesses):
@@ -244,22 +244,21 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
                 extinction_generations.append(i) # In this array we store the generations in which there has been an extinction.
                 gens_passed_after_ext = 0
 
-
     return maxfits, avgfits, bestsols, extinction_generations
 
 
-def test_solution(params, newfolder, whatplot='inout', rangeplot ='large'):
-    '''This function obtains the dynamics from the testing set and plots
+def test_solution(params, newfolder, whatplot='net', rangeplot ='large'):
+    """This function obtains the dynamics from the testing set and plots
     some of the dynamics. It also prints and saves the correlations between
     the output nodes which will indicate if the solution has been able 
-    to learn.'''
+    to learn."""
     f = open(newfolder+'/correlation.txt', 'a+')
     outpairs = params['output_pairs']
 
     if whatplot == 'inout':
         pltfun = plotinputsoutputs
-    elif whatplot == 'any':
-        pltfun = plotanynet
+    elif whatplot == 'net':
+        pltfun = plot_363
     else:
         print('Select a valid whatplot string.')
 
@@ -269,19 +268,19 @@ def test_solution(params, newfolder, whatplot='inout', rangeplot ='large'):
         # Iterate over evey pair of signals
         saving = newfolder + '/Dynamics' + str(ii) + rangeplot + '.png'
 
+        # For each pair of correlated inputs there are n realizations in the test_set
+
         for nn, signalsforpair in enumerate(params['test_dataset'][ii]):
-            # Iterate over every set of signals for the actual pair
-            f.write('%i pair, %i element in the set: \n' % (ii, nn))
+            f.write('%i set, %i element in the set: \n' % (ii, nn))
             params['signals'] = signalsforpair
             y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], 3)
 
-            f.write('Nodes %i and %i should be synchronized:' % synch_pair)  #Saving results in file
+            f.write('Nodes %i and %i should be synchronized:' % synch_pair)
             f.write('\nCorrelation %i with %i: ' % (9, 10) + str(ccross(y[9], y[10])))
             f.write('\nCorrelation %i with %i: ' % (9, 11) + str(ccross(y[9], y[11])))
             f.write('\nCorrelation %i with %i: ' % (10, 11) + str(ccross(y[10], y[11])) + '\n \n') 
 
-    # Then obtain the plots from the last element of the dataset. Maybe it
-    # would be better to obtain the plot of the better classified element...
+        # Then obtain a plot for each of the correlation pairs.
         if ii == 0:
             fig0 = pltfun(y, t, rangeplot, params, True, params['signals'])
             fig0.savefig(saving)

@@ -161,7 +161,7 @@ def plot3x3_signals(y, t, span, tstep, signals):
     return fig
 
 
-def plot_363(y, t, span, params, signals):
+def plot_363(y, t, span, params, bool_sig, signals):
     if span == 'large':
         xspan = (t[-50001], t[-1])
     elif span == 'small':

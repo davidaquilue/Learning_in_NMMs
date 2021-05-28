@@ -1,5 +1,5 @@
-'''Small script that will be used to recover the dynamics and results after a
-fail occured after the GA'''
+"""Small script that will be used to recover the dynamics and results after a
+fail occured after the GA"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,4 +23,4 @@ y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
 modidx = int(params['tspan'][-1]-10)*1000
 plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
 plot_fftoutputs(y, params, newfolder)
-test_solution(params, newfolder, whatplot='inout')
+test_solution(params, newfolder, whatplot='net')
