@@ -547,7 +547,7 @@ def draw_neural_net(ax, left, right, bottom, top, layer_sizes, conn_matrix, maxv
 def plotcouplings(solution, matrix_exc, matrix_inh, minmaxvals, params, bandw=False):
     """Returns an imshow of the excitatory and inhibitory weight matrix plus the network diagrams. solution is
     the vector of the individiual with best fitness."""
-    fig, axes = plt.subplots(2, 2, figsize=(10, 20))
+    fig, axes = plt.subplots(2, 2, figsize=(15, 15))
     weights_exc, weights_inh = individual_to_weights(solution, matrix_exc, matrix_inh)
     nnodes = matrix_exc.shape[0]
     ticks = np.linspace(0, nnodes-1, nnodes)
@@ -559,10 +559,17 @@ def plotcouplings(solution, matrix_exc, matrix_inh, minmaxvals, params, bandw=Fa
     ax.imshow(weights_exc, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
     ax.set(title='Excitatory Coupling Coefficients', xlabel='Post-Synaptic Node', ylabel='Pre-Synaptic Node',
            xticks=ticks, yticks=ticks)
+    ax.set_xticks(np.arange(-.5, params['Nnodes']-1, 1), minor=True)
+    ax.set_yticks(np.arange(-.5, params['Nnodes']-1, 1), minor=True)
+    ax.grid(which='minor', color='k')
+
     ax = axes[0, 1]
     im = ax.imshow(weights_inh, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
     ax.set(title='Inhibitory Coupling Coefficients', xlabel='Post-Synaptic Node', ylabel='Pre-Synaptic Node',
            xticks=ticks, yticks=ticks)
+    ax.set_xticks(np.arange(-.5, params['Nnodes'] - 1, 1), minor=True)
+    ax.set_yticks(np.arange(-.5, params['Nnodes'] - 1, 1), minor=True)
+    ax.grid(which='minor', color='k')
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(im, cax=cbar_ax)

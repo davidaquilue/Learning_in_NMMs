@@ -30,8 +30,8 @@ Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], p
 params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
-maxval = 0.3*C  # Quan tots estan a 0.3C el valor mig puja força pero sembla que es podra treballar en aquest regim
-
+# Quan tots estan a 0.3C el valor mig puja força pero sembla que es podra treballar en aquest regim
+maxval = 0.4*C
 # Matrix exc és una matriu Nnodes X Nnodes, igual que matrix inh. Columna ii determina a quins nodes el node ii afecta
 # fila ii determina quins nodes afecten al node ii
 idexes = np.nonzero(matrix_exc)
@@ -55,7 +55,6 @@ exc_w[11, [5, 6]] = [1*maxval, 1*maxval]
 exc_w[10, [7, 8]] = [1*maxval, 1*maxval]
 exc_w[11, [7, 8]] = [1*maxval, 1*maxval]
 
-
 inh_w[3, [0, 1]] = [0.5*maxval, 0.5*maxval]
 inh_w[4, [0, 1]] = [0.5*maxval, 0.5*maxval]
 inh_w[5, [0, 2]] = [0.5*maxval, 0.5*maxval]
@@ -69,10 +68,13 @@ inh_w[9, [5, 6]] = [0.5*maxval, 0.5*maxval]
 inh_w[11, [5, 6]] = [0.5*maxval, 0.5*maxval]
 inh_w[10, [7, 8]] = [0.5*maxval, 0.5*maxval]
 inh_w[11, [7, 8]] = [0.5*maxval, 0.5*maxval]
-
 # Aquí acaba la part de copy paste
 
 params['individual'] = np.append(exc_w[idexes].flatten(), inh_w[idexes].flatten())
+
+#params['individual'] = np.load('best_ind.npy')
+
+
 params['tstep'] = 0.001
 params['tspan'] = (0, 500)
 
@@ -80,7 +82,7 @@ params['tspan'] = (0, 500)
 offset = 10
 ampnoise = 2
 amps = [110, 120]
-paircorr = (1, 2)
+paircorr = (0, 2)
 
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
 params['signals'] = build_p_inputs(params['tuplenetwork'][0], t, offset, paircorr, ampnoise)
@@ -92,7 +94,8 @@ print('Correlated pair: %s' % (paircorr, ))
 print('Crosscorr 0,1: %f ' % ccross(y[9], y[10], 250000))
 print('Crosscorr 0,2: %f ' % ccross(y[9], y[11], 250000))
 print('Crosscorr 1,2: %f ' % ccross(y[11], y[10], 250000))
-fig2 = plotcouplings(params['individual'], matrix_exc, matrix_inh, params=params, minmaxvals=(0, maxval), bandw=True)
+fig2 = plotcouplings(params['individual'], matrix_exc, matrix_inh, params=params,
+                     minmaxvals=(0, np.amax(params['individual'])), bandw=True)
 plt.show()
 
 # Other test shit
