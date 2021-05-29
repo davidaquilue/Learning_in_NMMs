@@ -12,7 +12,7 @@ from singleJR import unpacking_signal, derivatives_signal, obtaindynamics
 from filefuns import get_num
 
 
-def p_times(tspan, lens=(12, 17, 23)):
+def p_times(tspan, lens=(5, 9, 13)):
     """Returns a list of the times at which there is a change in value."""
     time = tspan[0] + random.choice(lens)
     time_order = [time]
@@ -44,7 +44,7 @@ def p_amplitudes(time_order, amps=(110, 120, 130), sils=True,
 
 
 @njit(fastmath=True)
-def build_p_vector(t, time_order, amps_order, offset, ampnoise=5):
+def build_p_vector(t, time_order, amps_order, offset, ampnoise=2):
     """Builds the p(t) signal vector/array p(t) = offset + amp(t) + random(noise)"""
     p_vector = np.zeros_like(t)
     idx = 0
@@ -56,7 +56,7 @@ def build_p_vector(t, time_order, amps_order, offset, ampnoise=5):
 
 
 @njit(fastmath=True)
-def build_p_vector_soft(t, time_order, amps_order, offset, ampnoise=5):
+def build_p_vector_soft(t, time_order, amps_order, offset, ampnoise=2):
     """Same as build p_vector but i want to soften the discontinuity"""
     p_vector = np.zeros_like(t)
     idx = 0
@@ -71,7 +71,7 @@ def build_p_vector_soft(t, time_order, amps_order, offset, ampnoise=5):
     return p_vector
 
 
-def build_p_inputs(inputnodes, t, offset, corrnodes, ampnoise=5):
+def build_p_inputs(inputnodes, t, offset, corrnodes, ampnoise=2):
     """ Builds a (inputnodes, t.size) array containing the different input
     vectors p that go into a node.
     All corrnodes will be generated with the same time_order """
@@ -89,7 +89,7 @@ def build_p_inputs(inputnodes, t, offset, corrnodes, ampnoise=5):
     return p_inputs
 
 
-def build_p_inputs_shifted(inputnodes, t, offset, corrnodes, tshift, amp=110, ampnoise=5):
+def build_p_inputs_shifted(inputnodes, t, offset, corrnodes, tshift, amp=110, ampnoise=2):
     """ Adds a time shift to the input vectors. tshift in seconds """
     idx_shift = int(tshift/(t[1]-t[0]))
     p_inputs = np.zeros((inputnodes, t.size))

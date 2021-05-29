@@ -449,22 +449,27 @@ def plot_sigsingleJR(t, y, signal):
 def plot_inputs(y, signals, params, t, newfolder):
     inputnodes = params['tuplenetwork'][0]
     for ii in range(inputnodes):
-        fig, axes = plt.subplots(2, 1, figsize=(20,10))
+        fig, axes = plt.subplots(2, 1, figsize=(20, 10))
         axes[0].plot(t, signals[ii], 'k')
+        axes[0].set(xlim=(10, params['tspan'][1]), xlabel='s', ylabel='Hz',
+                    title='Input signal and response of node %i' % ii)
         axes[1].plot(t, y[ii], 'r')
-        axes[1].set(ylim = (0,13))
+        axes[1].set(ylim=(np.amin(y) - 1, np.amax(y) + 1),
+                    xlim=(10, params['tspan'][1]), xlabel='s', ylabel='mV')
         fig.savefig(newfolder + '/inputs_' + str(ii) + '.png')
 
 
 def plot_fftoutputs(y, params, newfolder):
     nodeslast = params['tuplenetwork'][-1]
     idx = params['Nnodes'] - nodeslast
-    fig, axes = plt.subplots(nodeslast, 1, figsize = (8, 6*nodeslast))
+    fig, axes = plt.subplots(nodeslast, 1, figsize=(8, 6*nodeslast))
     for ii in range(nodeslast):
         aux = idx + ii
         f, psds = psd(y[aux], params['tstep'])
-        axes[ii].plot(f, psds)
-        axes[ii].set(xlim = (0, 40))
+        axes[ii].semilogy(f, psds)
+        axes[ii].set(xlim=(-0.01, 40), title='PSD of node %i output' % aux,
+                     xlabel='f ($Hz$)', ylabel='PSD',
+                     ylim=(10**(-2), 10**12))
     fig.savefig(newfolder + '/fftinputs.png')
 
 

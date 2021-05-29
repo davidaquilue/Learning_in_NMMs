@@ -41,7 +41,7 @@ params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
 params['tstep'] = 0.001
-params['tspan'] = (0, 300)
+params['tspan'] = (0, 500)
 
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
@@ -53,7 +53,7 @@ params['output_pairs'] = tuple([(idx + pair[0], idx + pair[1]) for pair in param
 # Correlated nodes at the output, basically: ((10, 11), (9, 11), (9,10)) with more freedom
 
 params['unsync'] = (0, )  # , 1, 2) # Unsynchronized nodes, have to align with the correlated pairs.
-params['n'] = 10  # Amount of elements in the training set, at least 10
+params['n'] = 30  # Amount of elements in the training set, at least 10
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
                                         params['pairs'], t, offset=10)
 params['test_dataset'] = build_dataset(int(0.1*params['n']),
@@ -65,7 +65,7 @@ num_generations = 150
 popsize = 38        # Population size
 mutindprob = 0.2    # Probability that an individual undergoes mutation
 coprob = 0.5        # Crossover probability
-maxgene = 0.05*C       # Maximum coupling value of a connection
+maxgene = 0.025*C       # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
 par_processes = 38  # How many cores will be used in order to parallelize the GA.
 L = 50              # After how many non-improving generations exctinction occurs
