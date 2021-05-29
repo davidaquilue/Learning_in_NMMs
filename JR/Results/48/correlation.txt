@@ -1,6 +1,0 @@
-0 set, 0 element in the set: 
-Nodes 10 and 11 should be synchronized:
-Correlation 9 with 10: 0.034306772169669035
-Correlation 9 with 11: 0.04857652176821261
-Correlation 10 with 11: 0.9973382302472069
- 
