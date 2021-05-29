@@ -8,6 +8,7 @@ from networkJR import obtaindynamicsNET
 from plotfuns import plot_363, plotinputsoutputs
 import matplotlib.pyplot as plt
 import numpy as np
+from tabulate import tabulate
 
 # DEAP Algorithm.
 def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob = 0.05, tmntsize = 3, v = 1):
@@ -248,7 +249,8 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
 
 
 def test_solution(params, newfolder, whatplot='net', rangeplot ='large'):
-    """This function obtains the dynamics from the testing set and plots
+    """!!!IT WORKS FOR THE 363 NETWORK ONLY RIGHT NOW!!!
+    This function obtains the dynamics from the testing set and plots
     some of the dynamics. It also prints and saves the correlations between
     the output nodes which will indicate if the solution has been able 
     to learn."""
@@ -261,26 +263,42 @@ def test_solution(params, newfolder, whatplot='net', rangeplot ='large'):
         pltfun = plot_363
     else:
         print('Select a valid whatplot string.')
-
-    # First of all print the output correlations and whether the learning
-    # process was a success or a fail.
+    idx4corr = int((params['tspan'][1] - params['tspan'][0] - 20)/params['tstep'])
+    # Print the correlations between all the nodes. MAIN RESULTS
+    pairsi = ((1, 2), (0, 2), (0, 1))
+    pairsf = ((10, 11), (9, 11), (9, 10))
+    listheaders = ['Signals', 'Corrs', 'First Layer', 'Corrs', 'Last layer', 'Corrs']  # Table things
     for ii, synch_pair in enumerate(outpairs):
-        # Iterate over evey pair of signals
+        # Iterate over evey pair of possible correlations
         saving = newfolder + '/Dynamics' + str(ii) + rangeplot + '.png'
 
         # For each pair of correlated inputs there are n realizations in the test_set
 
         for nn, signalsforpair in enumerate(params['test_dataset'][ii]):
-            f.write('%i set, %i element in the set: \n' % (ii, nn))
+            f.write('Sample %i from set %i:\n' % (nn, ii))
+            f.write('Nodes %i and %i should be correlated: \n' % pairsf[ii])
+            # We obtain the dynamics for the sample
             params['signals'] = signalsforpair
             y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], 3)
 
-            f.write('Nodes %i and %i should be synchronized:' % synch_pair)
-            f.write('\nCorrelation %i with %i: ' % (9, 10) + str(ccross(y[9], y[10])))
-            f.write('\nCorrelation %i with %i: ' % (9, 11) + str(ccross(y[9], y[11])))
-            f.write('\nCorrelation %i with %i: ' % (10, 11) + str(ccross(y[10], y[11])) + '\n \n') 
+            # We calculate all the correlations and save them in a table.
+            # Correlations between input signals
+            ccps = [ccross(signalsforpair[pair[0]], signalsforpair[pair[1]], idx4corr) for pair in pairsi]
+            # Correlations between nodes in the first layer
+            ccnis = [ccross(y[pair[0]], y[pair[1]], idx4corr) for pair in pairsi]
+            # Correlations between nodes in the last layer
+            ccnfs = [ccross(y[pair[0]], y[pair[1]], idx4corr) for pair in pairsf]
 
-        # Then obtain a plot for each of the correlation pairs.
+            # Build the table
+            table = []
+            for kk in range(3):
+                table.append(['p%i and p%i' % pairsi[kk], ccps[kk], 'nodes %i and %i' % pairsi[kk],
+                              ccnis[kk], 'nodes %i and %i' % pairsf[kk], ccnfs[kk]])
+            content = tabulate(table, headers=listheaders, floatfmt=".4f")
+            f.write(content)
+            f.write('\n \n')
+
+        # Then we obtain a sample plot for each of the correlation pairs.
         if ii == 0:
             fig0 = pltfun(y, t, rangeplot, params, True, params['signals'])
             fig0.savefig(saving)

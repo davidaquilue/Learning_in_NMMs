@@ -99,7 +99,7 @@ fig2 = plotcouplings(params['individual'], matrix_exc, matrix_inh, params=params
 plt.show()
 
 # Other test shit
-'''
+"""
 inputnodes = 3
 t = np.arange(0, 80, 0.001)
 offset = 80
@@ -139,5 +139,4 @@ for jj in range(len(corrpairs)):
     print('cc1: ' + str(fastcrosscorrelation(data_set[12,0], data_set[12,1])))
     print('cc2: ' + str(fastcrosscorrelation(data_set[12,0], data_set[12,2])))
     print('cc3: ' + str(fastcrosscorrelation(data_set[12,2], data_set[12,1])))
-plt.show()
-'''
+"""
