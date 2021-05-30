@@ -519,12 +519,18 @@ def draw_neural_net(ax, left, right, bottom, top, layer_sizes, conn_matrix, maxv
     v_spacing = (top - bottom) / float(max(layer_sizes))
     h_spacing = (right - left) / float(len(layer_sizes) - 1)
     # Nodes
+    node = 0
     for n, layer_size in enumerate(layer_sizes):
         layer_top = v_spacing * (layer_size - 1) / 2. + (top + bottom) / 2.
         for m in range(layer_size):
-            circle = plt.Circle((n * h_spacing + left, layer_top - m * v_spacing), v_spacing / 4.,
+            xcirc = n * h_spacing + left
+            ycirc = layer_top - m * v_spacing
+            print(xcirc, ycirc)
+            circle = plt.Circle((xcirc, ycirc), v_spacing / 4.,
                                 color='w', ec=cm.tab10(n), zorder=4, lw=3)
             ax.add_artist(circle)
+            ax.annotate(str(node), xy=(xcirc, ycirc-0.01), zorder=5, xycoords='axes fraction', ha='center')
+            node += 1
     # Edges
     init_o = 0
     init_m = 0
@@ -552,7 +558,7 @@ def draw_neural_net(ax, left, right, bottom, top, layer_sizes, conn_matrix, maxv
 def plotcouplings(solution, matrix_exc, matrix_inh, minmaxvals, params, bandw=False):
     """Returns an imshow of the excitatory and inhibitory weight matrix plus the network diagrams. solution is
     the vector of the individiual with best fitness."""
-    fig, axes = plt.subplots(2, 2, figsize=(15, 15))
+    fig, axes = plt.subplots(2, 2, figsize=(10, 10))
     weights_exc, weights_inh = individual_to_weights(solution, matrix_exc, matrix_inh)
     nnodes = matrix_exc.shape[0]
     ticks = np.linspace(0, nnodes-1, nnodes)
