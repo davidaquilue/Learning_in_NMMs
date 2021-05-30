@@ -470,7 +470,7 @@ def plot_fftoutputs(y, params, newfolder):
         axes[ii].set(xlim=(-0.01, 40), title='PSD of node %i output' % aux,
                      xlabel='f ($Hz$)', ylabel='PSD',
                      ylim=(10**(-2), 10**12))
-    fig.savefig(newfolder + '/fftinputs.png')
+    fig.savefig(newfolder + '/fftoutputs.png')
 
 
 def plot_corrs(y, params):  # Mes endavant ja fare que es guardi en un folder si la necessito

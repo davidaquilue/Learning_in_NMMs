@@ -46,17 +46,17 @@ params['tspan'] = (0, 500)
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
 
-params['pairs'] = ((1, 2),)  # , (0, 2), (0, 1))  # Pairs of correlated first layer nodes
+params['pairs'] = ((1, 2), (0, 2), (0, 1))  # Pairs of correlated first layer nodes
 idx = params['Nnodes'] - params['tuplenetwork'][-1]
 
 params['output_pairs'] = tuple([(idx + pair[0], idx + pair[1]) for pair in params['pairs']])
 # Correlated nodes at the output, basically: ((10, 11), (9, 11), (9,10)) with more freedom
 
-params['unsync'] = (0, )  # , 1, 2) # Unsynchronized nodes, have to align with the correlated pairs.
-params['n'] = 30  # Amount of elements in the training set, at least 10
+params['unsync'] = (0, 1, 2)  # Unsynchronized nodes, have to align with the correlated pairs.
+params['n'] = 10  # Amount of elements in the training set, at least 10
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
                                         params['pairs'], t, offset=10)
-params['test_dataset'] = build_dataset(int(0.1*params['n']),
+params['test_dataset'] = build_dataset(int(0.2*params['n']),
                                        params['tuplenetwork'][0],
                                        params['pairs'], t, offset=10)
 

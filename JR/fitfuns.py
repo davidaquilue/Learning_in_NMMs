@@ -35,9 +35,10 @@ def fit_func_cross_V3(params, individual):
 
             if ii == 0:
                 fit0 += cc0 - (cc1+cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+            elif ii == 1:
+                fit1 += cc0 - (cc1 + cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
             else:
-                fit1 = 0  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
-                fit2 = 0  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+                fit2 = cc0 - (cc1 + cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
 
     return fit0/(maxf*n), fit1/(maxf*n), fit2/(maxf*n)
 
