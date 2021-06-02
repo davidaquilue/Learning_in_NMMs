@@ -455,8 +455,8 @@ def plot_inputs(y, signals, params, t, newfolder):
         axes[0].set(xlim=(10, params['tspan'][1]), xlabel='s', ylabel='Hz',
                     title='Input signal and response of node %i' % ii)
         axes[1].plot(t, y[ii], 'r')
-        axes[1].set(ylim=(np.amin(y) - 1, np.amax(y) + 1),
-                    xlim=(10, params['tspan'][1]), xlabel='s', ylabel='mV')
+        axes[1].set(ylim=ylim, xlim=(10, params['tspan'][1]), xlabel='s',
+                    ylabel='mV')
         fig.savefig(newfolder + '/inputs_' + str(ii) + '.png')
 
 

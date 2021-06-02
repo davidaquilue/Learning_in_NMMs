@@ -191,7 +191,8 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
         # Selection of the best individuals from the previous population
         # I noticed that i am not implementing elitism which might be very
         # important in our case.
-        elite = toolbox.select(pop, 6)
+        elite_size = int(np.ceil(0.25*len(pop)/2)*2)  # Make sure it's even 
+        elite = toolbox.select(pop, len(pop)-elite_size)
         offspring = toolbox.select(pop, len(pop)-6)
         offspring = list(toolbox.map(toolbox.clone, offspring))
 

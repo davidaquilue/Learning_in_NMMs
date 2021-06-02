@@ -91,9 +91,9 @@ def fit_func_cross_V32(params, individual):
             #elif ii == 1:
                 #fit1 += fit(cc0, cc1, cc2)  # 1/(1.1-cc0) - 1/(1.1-cc1) - 1/(1.1-cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
             else:
-                fit2 += 1/cc0  #fit(cc0, cc1, cc2)  # 1/(1.1-cc0) - 1/(1.1-cc1) - 1/(1.1-cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+                fit2 += 3*(1 - cc0)**2  #fit(cc0, cc1, cc2)  # 1/(1.1-cc0) - 1/(1.1-cc1) - 1/(1.1-cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
 
-    return fit0/(maxf*n), fit1/(maxf*n), fit2/(maxf*n)
+    return fit0/(maxf*n), fit1/(maxf*n), fit2/(2*maxf*n)
 
 
 

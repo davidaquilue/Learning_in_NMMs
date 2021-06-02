@@ -56,18 +56,18 @@ params['unsync'] = (0, 1, 2)  # Unsynchronized nodes, have to align with the cor
 params['n'] = 2  # Amount of elements in the training set, at least 10
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
                                         params['pairs'], t, offset=10)
-params['test_dataset'] = build_dataset(int(0.1*params['n']),
+params['test_dataset'] = build_dataset(int(1*params['n']),
                                        params['tuplenetwork'][0],
                                        params['pairs'], t, offset=10)
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
-num_generations = 50
-popsize = 20        # Population size
+num_generations = 100
+popsize = 25        # Population size
 mutindprob = 0.2    # Probability that an individual undergoes mutation
 coprob = 0.5        # Crossover probability
 maxgene = 0.2*C    # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
-par_processes = 20  # How many cores will be used in order to parallelize the GA.
+par_processes = 25  # How many cores will be used in order to parallelize the GA.
 L = 35              # After how many non-improving generations exctinction occurs
 
 params['maxvalue'] = maxgene
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     results_dir = check_create_results_folder()
     newfolder = test_folder(results_dir)
     fig_idx = 1
-    cheatlist = galgs.get_OP(params)
+    cheatlist = maxgene*np.random.rand(indivsize)
     # If we want to see how will the first layer nodes behave we have to uncomment
     # this piece of code:
     with Pool(processes=par_processes) as piscina:
