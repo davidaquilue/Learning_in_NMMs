@@ -11,6 +11,20 @@ from itertools import combinations
 
 
 # MAIN FITNESS FUNCTION THAT WILL BE USED DURING THE DEVELOPMENT OF THE THESIS
+def fit(ccpairc, ccpairun1, ccpairun2):
+    # Vamos a poner que queremos maximizar el cc0 y ademas queremos que las
+    # distancias entre el cc0 y los otros dos aumenten también
+    d1 = (ccpairc - ccpairun1)**2
+    d2 = (ccpairc - ccpairun2)**2
+    # Both between 0 and 1
+    fitness = ccpairc + d1 + d2  # Between 0 and 3
+    # And we can also add a penalizer when the pair we want to be correlated
+    # is not the most correlated:
+    if ccpairc <= ccpairun1 or ccpairc <= ccpairun2:
+        fitness -= 2  # Thus for negative values of the fitness we won't have
+        # what we wanted
+    return fitness
+
 def fit_func_cross_V3(params, individual):
     params['individual'] = np.array(individual)  # Set of weights
     dataset = params['train_dataset']
@@ -33,12 +47,15 @@ def fit_func_cross_V3(params, individual):
             cc1 = fastcrosscorrelation(y[idxcomp1], y[idxunsync], steps_corr)
             cc2 = fastcrosscorrelation(y[idxunsync], y[idxcomp2], steps_corr)
 
+            # cc0 = fastcrosscorrelation(y[10], y[11], steps_corr)
+            # cc1 = fastcrosscorrelation(y[9], y[11], steps_corr)
+            # cc2 = fastcrosscorrelation(y[9], y[10], steps_corr)
             if ii == 0:
-                fit0 += cc0 - (cc1+cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+                fit0 += fit(cc0, cc1, cc2)  # 1/(1.1-cc0) - 1/(1.1-cc1) - 1/(1.1-cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
             elif ii == 1:
-                fit1 += cc0 - (cc1 + cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+                fit1 += fit(cc0, cc1, cc2)  # 1/(1.1-cc0) - 1/(1.1-cc1) - 1/(1.1-cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
             else:
-                fit2 = cc0 - (cc1 + cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+                fit2 += fit(cc0, cc1, cc2)  # 1/(1.1-cc0) - 1/(1.1-cc1) - 1/(1.1-cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
 
     return fit0/(maxf*n), fit1/(maxf*n), fit2/(maxf*n)
 

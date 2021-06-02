@@ -1,13 +1,26 @@
 ''' Some test per no anar repetint tot bro'''
 import numpy as np
 import matplotlib
+import os
 import matplotlib.pyplot as plt
 from signals import build_p_inputs
 from matfuns import fastcrosscorrelation as ccross, findlayer, psd, networkmatrix_exc_inh
 from networkJR import obtaindynamicsNET
 from plotfuns import plotcouplings, plot_corrs, plot_363
+from galgs import test_solution
+from main import params
+from fitfuns import fit
 matplotlib.use('agg')
 
+
+for ii in range(30):
+    a = np.random.random(3)
+    print(a)
+    print(fit(a[0], a[1], a[2]))
+    print('\n')
+
+
+"""
 # Set up of JR params
 params = dict(A=3.25, B=22.0, v0=6.0)
 params['a'], params['b'], params['e0'] = 100.0, 50.0, 2.5
@@ -74,11 +87,12 @@ inh_w[11, [7, 8]] = [0.5*maxval, 0.5*maxval]
 
 params['individual'] = np.append(exc_w[idexes].flatten(), inh_w[idexes].flatten())
 
-#params['individual'] = np.load('best_ind.npy')
 
 
 params['tstep'] = 0.001
 params['tspan'] = (0, 500)
+test_solution(params, os.getcwd())
+"""
 """
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 offset = 10
@@ -97,9 +111,9 @@ print('Crosscorr 0,1: %f ' % ccross(y[9], y[10], 250000))
 print('Crosscorr 0,2: %f ' % ccross(y[9], y[11], 250000))
 print('Crosscorr 1,2: %f ' % ccross(y[11], y[10], 250000))
 """
-fig2 = plotcouplings(params['individual'], matrix_exc, matrix_inh, params=params,
-                     minmaxvals=(0, np.amax(params['individual'])), bandw=True)
-fig2.savefig('Testin.png')
+#fig2 = plotcouplings(params['individual'], matrix_exc, matrix_inh, params=params,
+                    # minmaxvals=(0, np.amax(params['individual'])), bandw=True)
+#fig2.savefig('Testin.png')
 #plt.show()
 
 # Other test shit

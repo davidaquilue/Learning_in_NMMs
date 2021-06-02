@@ -448,6 +448,7 @@ def plot_sigsingleJR(t, y, signal):
 
 def plot_inputs(y, signals, params, t, newfolder):
     inputnodes = params['tuplenetwork'][0]
+    ylim = (np.amin(y[0:3])-1, np.amax(y[0:3])+1)
     for ii in range(inputnodes):
         fig, axes = plt.subplots(2, 1, figsize=(20, 10))
         axes[0].plot(t, signals[ii], 'k')
@@ -525,7 +526,6 @@ def draw_neural_net(ax, left, right, bottom, top, layer_sizes, conn_matrix, maxv
         for m in range(layer_size):
             xcirc = n * h_spacing + left
             ycirc = layer_top - m * v_spacing
-            print(xcirc, ycirc)
             circle = plt.Circle((xcirc, ycirc), v_spacing / 4.,
                                 color='w', ec=cm.tab10(n), zorder=4, lw=3)
             ax.add_artist(circle)

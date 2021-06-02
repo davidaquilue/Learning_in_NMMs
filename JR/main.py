@@ -41,7 +41,7 @@ params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
 params['tstep'] = 0.001
-params['tspan'] = (0, 500)
+params['tspan'] = (0, 1000)
 
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
@@ -56,20 +56,21 @@ params['unsync'] = (0, 1, 2)  # Unsynchronized nodes, have to align with the cor
 params['n'] = 10  # Amount of elements in the training set, at least 10
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
                                         params['pairs'], t, offset=10)
-params['test_dataset'] = build_dataset(int(0.2*params['n']),
+params['test_dataset'] = build_dataset(int(0.1*params['n']),
                                        params['tuplenetwork'][0],
                                        params['pairs'], t, offset=10)
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
-num_generations = 150
-popsize = 38        # Population size
+num_generations = 50
+popsize = 40        # Population size
 mutindprob = 0.2    # Probability that an individual undergoes mutation
 coprob = 0.5        # Crossover probability
-maxgene = 0.025*C   # Maximum coupling value of a connection
+maxgene = 0.2*C    # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
-par_processes = 38  # How many cores will be used in order to parallelize the GA.
-L = 50              # After how many non-improving generations exctinction occurs
+par_processes = 40  # How many cores will be used in order to parallelize the GA.
+L = 35              # After how many non-improving generations exctinction occurs
 
+params['maxvalue'] = maxgene
 # Initialization of the necessary GA functions:
 # this has to go before the if name = main and before running the algorithm.
 toolbox, creator = galgs.initiate_DEAP(fit_func_cross_V3, params,
@@ -81,6 +82,7 @@ if __name__ == '__main__':
     results_dir = check_create_results_folder()
     newfolder = test_folder(results_dir)
     fig_idx = 1
+    cheatlist = galgs.get_OP(params)
     # If we want to see how will the first layer nodes behave we have to uncomment
     # this piece of code:
     with Pool(processes=par_processes) as piscina:
@@ -88,7 +90,7 @@ if __name__ == '__main__':
         maxfits, avgfits, bestsols, ext_gens = galgs.main_DEAP_extinction(num_generations,
                                                                           popsize, mutindprob,
                                                                           coprob, indivsize, toolbox,
-                                                                          creator, 1, L, piscina, v=2)
+                                                                          creator, 1, L, cheatlist, piscina, v=2)
         maxfits_avg = np.mean(maxfits, axis=1)  # Mean of the different fitnesses
         best_indivs_gen = np.argmax(maxfits_avg)  # Generation of the optimal individual
         solution = bestsols[best_indivs_gen]  # Optimal individual
@@ -118,3 +120,4 @@ if __name__ == '__main__':
         plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
         plot_fftoutputs(y, params, newfolder)
         galgs.test_solution(params, newfolder, whatplot='net')
+

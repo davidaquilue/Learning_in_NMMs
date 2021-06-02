@@ -40,8 +40,9 @@ def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob
     toolbox.register('mutate', tools.mutGaussian, 
                      mu=(generange[1] - generange[0])/2, 
                      sigma=(generange[1] - generange[0])/20, indpb=mutprob)  # Real number only mutation. Let's see how it works
-    toolbox.register('select', tools.selTournament, tournsize=tmntsize)
-
+    #toolbox.register('select', tools.selTournament, tournsize=tmntsize)
+    # Me acabo de enterar que tournament no hace seleccion de multiples variables
+    toolbox.register('select', tools.selNSGA2)
     return toolbox, creator
 
 
@@ -87,8 +88,12 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
 
     for i in tqdm(range(num_generations), desc = 'Genetic Algorithm Running'):
         # Selection of the best individuals from the previous population
-        offspring = toolbox.select(pop,len(pop))
-        offspring = list(toolbox.map(toolbox.clone, offspring)) 
+        
+        # I noticed that i am not implementing elitism which might be very
+        # important in our case.
+        elite = toolbox.select(pop, 6)
+        offspring = toolbox.select(pop, len(pop)-6)
+        offspring = list(toolbox.map(toolbox.clone, offspring))
 
         # Mutation and crossover
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
@@ -109,6 +114,7 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
             ind.fitness.values = fit
 
         # And finally reassign the offspring as the new population:
+        offspring.extend(elite)
         pop[:] = offspring
 
         # Storing different results
@@ -132,7 +138,9 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
     return maxfits, avgfits, bestsols
 
 
-def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, parallel, L, pool=None, v=2):
+def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
+                         indsize, toolbox, creator, parallel, L, cheatlist,
+                         pool=None, v=2):
     '''
     Runs the DEAP Genetic Algorithm. Main characteristics of the algorithm need to be passed now:
 
@@ -157,7 +165,6 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
     If we are using parallel processing, the with Pool as pool has to be called inside if __name__=='__main__'
     '''
     if parallel:
-        
         toolbox.register('map', pool.map)
     else:
         toolbox.register('map', map)
@@ -171,6 +178,9 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
     gens_passed_after_ext = 0
     bestsols = np.zeros((num_generations, indsize))
     pop = toolbox.population(n = popsize) # pop will be a list of popsize individuals
+    
+    # We now substitute one of the population with the OP individual
+    pop[0] = creator.Individual(cheatlist)
 
     fitnesses = list(toolbox.map(toolbox.evaluate, pop))
     extinction_generations = []
@@ -179,8 +189,11 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
 
     for i in tqdm(range(num_generations), desc = 'Genetic Algorithm Running'):
         # Selection of the best individuals from the previous population
-        offspring = toolbox.select(pop,len(pop))
-        offspring = list(toolbox.map(toolbox.clone, offspring)) 
+        # I noticed that i am not implementing elitism which might be very
+        # important in our case.
+        elite = toolbox.select(pop, 6)
+        offspring = toolbox.select(pop, len(pop)-6)
+        offspring = list(toolbox.map(toolbox.clone, offspring))
 
         # Mutation and crossover
         for child1, child2 in zip(offspring[::2], offspring[1::2]):
@@ -201,6 +214,7 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob, indsize, 
             ind.fitness.values = fit
 
         # And finally reassign the offspring as the new population:
+        offspring.extend(elite)
         pop[:] = offspring
 
         # Storing different results
@@ -312,3 +326,50 @@ def test_solution(params, newfolder, whatplot='net', rangeplot ='large'):
     f = open(newfolder+'/correlation.txt', 'r')
     print(f.read())  # This way we save the results in a .txt file for later
     plt.show()
+
+
+
+def get_OP(params):
+    maxval = params['maxvalue']
+    matrix_exc = params['matrix_exc']
+    matrix_inh = params['matrix_inh']
+    idexes = np.nonzero(matrix_exc)
+    exc_w = np.copy(matrix_exc)
+    exc_w[idexes] = 10**(-4)
+    inh_w = np.copy(matrix_inh)
+    inh_w[idexes] = 10**(-4)
+
+    # Editem les diferents connexions. Aquí es on fem el copy paste per obtenir els diferents resultats en directe.
+    exc_w[3, [0, 1]] = [1*maxval, 1*maxval]
+    exc_w[4, [0, 1]] = [1*maxval, 1*maxval]
+    exc_w[5, [0, 2]] = [1*maxval, 1*maxval]
+    exc_w[6, [0, 2]] = [1*maxval, 1*maxval]
+    exc_w[7, [1, 2]] = [1*maxval, 1*maxval]
+    exc_w[8, [1, 2]] = [1*maxval, 1*maxval]
+
+    exc_w[9, [3, 4]] = [1*maxval, 1*maxval]
+    exc_w[10, [3, 4]] = [1*maxval, 1*maxval]
+    exc_w[9, [5, 6]] = [1*maxval, 1*maxval]
+    exc_w[11, [5, 6]] = [1*maxval, 1*maxval]
+    exc_w[10, [7, 8]] = [1*maxval, 1*maxval]
+    exc_w[11, [7, 8]] = [1*maxval, 1*maxval]
+
+    inh_w[3, [0, 1]] = [0.5*maxval, 0.5*maxval]
+    inh_w[4, [0, 1]] = [0.5*maxval, 0.5*maxval]
+    inh_w[5, [0, 2]] = [0.5*maxval, 0.5*maxval]
+    inh_w[6, [0, 2]] = [0.5*maxval, 0.5*maxval]
+    inh_w[7, [1, 2]] = [0.5*maxval, 0.5*maxval]
+    inh_w[8, [1, 2]] = [0.5*maxval, 0.5*maxval]
+
+    inh_w[9, [3, 4]] = [0.5*maxval, 0.5*maxval]
+    inh_w[10, [3, 4]] = [0.5*maxval, 0.5*maxval]
+    inh_w[9, [5, 6]] = [0.5*maxval, 0.5*maxval]
+    inh_w[11, [5, 6]] = [0.5*maxval, 0.5*maxval]
+    inh_w[10, [7, 8]] = [0.5*maxval, 0.5*maxval]
+    inh_w[11, [7, 8]] = [0.5*maxval, 0.5*maxval]
+    # Aquí acaba la part de copy paste
+
+    OP = np.append(exc_w[idexes].flatten(), inh_w[idexes].flatten())
+    OPlist = OP.tolist()
+
+    return OPlist
