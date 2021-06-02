@@ -25,6 +25,7 @@ def fit(ccpairc, ccpairun1, ccpairun2):
         # what we wanted
     return fitness
 
+
 def fit_func_cross_V3(params, individual):
     params['individual'] = np.array(individual)  # Set of weights
     dataset = params['train_dataset']
@@ -59,6 +60,40 @@ def fit_func_cross_V3(params, individual):
 
     return fit0/(maxf*n), fit1/(maxf*n), fit2/(maxf*n)
 
+
+def fit_func_cross_V32(params, individual):
+    params['individual'] = np.array(individual)  # Set of weights
+    dataset = params['train_dataset']
+    nodes_in_lastlayer = params['tuplenetwork'][-1]
+    idx_nodes_lastlayer = params['Nnodes'] - nodes_in_lastlayer
+    n = params['n']
+    fit0 = 0
+    fit1 = 0
+    fit2 = 0
+    maxf = 1  # 0.9**2 + 2*0.7**2
+    for ii, (pair, unsync) in enumerate(zip(params['pairs'], params['unsync'])):
+        idxcomp1 = idx_nodes_lastlayer + pair[0]
+        idxcomp2 = idx_nodes_lastlayer + pair[1]
+        idxunsync = idx_nodes_lastlayer + unsync  # Idxs for the output layer
+        steps_corr = int((params['tspan'][1] - params['tspan'][0] - 20)/params['tstep'])
+        for nn in range(params['n']):
+            params['signals'] = dataset[ii][nn]  # Extract the one needed from the dataset
+            y, _ = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
+            #cc0 = fastcrosscorrelation(y[idxcomp1], y[idxcomp2], steps_corr)
+            #cc1 = fastcrosscorrelation(y[idxcomp1], y[idxunsync], steps_corr)
+            #cc2 = fastcrosscorrelation(y[idxunsync], y[idxcomp2], steps_corr)
+
+            cc0 = fastcrosscorrelation(y[10], y[11], steps_corr)
+            cc1 = fastcrosscorrelation(y[9], y[11], steps_corr)
+            cc2 = fastcrosscorrelation(y[9], y[10], steps_corr)
+            if ii == 0:
+                fit0 += fit(cc0, cc1, cc2)  # 1/(1.1-cc0) - 1/(1.1-cc1) - 1/(1.1-cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+            #elif ii == 1:
+                #fit1 += fit(cc0, cc1, cc2)  # 1/(1.1-cc0) - 1/(1.1-cc1) - 1/(1.1-cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+            else:
+                fit2 += 1/cc0  #fit(cc0, cc1, cc2)  # 1/(1.1-cc0) - 1/(1.1-cc1) - 1/(1.1-cc2)  # (0.9 - cc0)**2 + (0.3 - cc1)**2 + (0.3 - cc2)**2
+
+    return fit0/(maxf*n), fit1/(maxf*n), fit2/(maxf*n)
 
 
 
