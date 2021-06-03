@@ -41,7 +41,7 @@ params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
 params['tstep'] = 0.001
-params['tspan'] = (0, 1000)
+params['tspan'] = (0, 2000)
 
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
@@ -53,23 +53,25 @@ params['output_pairs'] = tuple([(idx + pair[0], idx + pair[1]) for pair in param
 # Correlated nodes at the output, basically: ((10, 11), (9, 11), (9,10)) with more freedom
 
 params['unsync'] = (0, 1, 2)  # Unsynchronized nodes, have to align with the correlated pairs.
-params['n'] = 10  # Amount of elements in the training set, at least 10
+params['n'] = 1  # Amount of elements in the training set, at least 10
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
                                         params['pairs'], t, offset=10)
-params['test_dataset'] = build_dataset(int(0.1*params['n']),
+params['test_dataset'] = build_dataset(int(2*params['n']),
                                        params['tuplenetwork'][0],
                                        params['pairs'], t, offset=10)
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
-num_generations = 50
-popsize = 40        # Population size
-mutindprob = 0.2    # Probability that an individual undergoes mutation
-coprob = 0.5        # Crossover probability
-maxgene = 0.2*C    # Maximum coupling value of a connection
+num_generations = 100
+popsize = 120       # Population size
+mutindprob = 0.1    # Probability that an individual undergoes mutation
+coprob = 0.8        # Crossover probability
+maxgene = 0.2*C     # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
-par_processes = 40  # How many cores will be used in order to parallelize the GA.
+par_processes = 34  # How many cores will be used in order to parallelize the GA.
 L = 35              # After how many non-improving generations exctinction occurs
 
+# Maybe coprob=0.5 and mutindprob=0.2 are not the best, imma try for the next
+# test the values coprob=0.8 and mutindprob=0.1
 params['maxvalue'] = maxgene
 # Initialization of the necessary GA functions:
 # this has to go before the if name = main and before running the algorithm.

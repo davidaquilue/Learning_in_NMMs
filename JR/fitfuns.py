@@ -14,8 +14,8 @@ from itertools import combinations
 def fit(ccpairc, ccpairun1, ccpairun2):
     # Vamos a poner que queremos maximizar el cc0 y ademas queremos que las
     # distancias entre el cc0 y los otros dos aumenten también
-    d1 = (ccpairc - ccpairun1)**2
-    d2 = (ccpairc - ccpairun2)**2
+    d1 = (ccpairc - ccpairun1)#**2
+    d2 = (ccpairc - ccpairun2)#**2
     # Both between 0 and 1
     fitness = ccpairc + d1 + d2  # Between 0 and 3
     # And we can also add a penalizer when the pair we want to be correlated
