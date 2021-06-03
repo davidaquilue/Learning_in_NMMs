@@ -13,7 +13,7 @@ from fitfuns import fit_func_cross_V3
 from filefuns import check_create_results_folder, test_folder
 from signals import build_dataset
 import galgs
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 
 # JR MODEL PARAMETERS
 params = dict(A=3.25, B=22.0, v0=6.0)

@@ -12,7 +12,6 @@ from main import params
 from fitfuns import fit
 import time
 
-matplotlib.use('agg')
 
 
 start_params = time.time()
@@ -80,18 +79,18 @@ inh_w[10, [7, 8]] = [0.5*maxval, 0.5*maxval]
 inh_w[11, [7, 8]] = [0.5*maxval, 0.5*maxval]
 # Aquí acaba la part de copy paste
 
-params['individual'] = np.append(exc_w[idexes].flatten(), inh_w[idexes].flatten())
+params['individual'] = np.load('best_ind.npy')
 
 
 
 params['tstep'] = 0.001
-params['tspan'] = (0, 2000)
+params['tspan'] = (0, 100)
 
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 offset = 10
 ampnoise = 2
 amps = [110, 120]
-paircorr = (0, 2)
+paircorr = (1, 2)
 
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
 params['signals'] = build_p_inputs(params['tuplenetwork'][0], t, offset, paircorr, ampnoise)
@@ -101,23 +100,23 @@ print('all the params have been built in %f: ' % (time.time()-start_params))
 start_dyn = time.time()
 y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
 print('Dynamics obtained in: %f' %(time.time() - start_dyn))
-#fig1 = plot_363(y, t, 'large', params, params['signals'])
-#fig3 = plot_corrs(y, params)
+fig1 = plot_363(y, t, 'large', params, True, params['signals'])
+fig3 = plot_corrs(y, params)
 
 start_corrs = time.time()
-cc0 = ccross(y[9], y[10], 1500000)
-cc1 = ccross(y[9], y[11], 1500000)
-cc2 = ccross(y[11], y[10], 1500000)
+cc0 = ccross(y[9], y[10], 15000)
+cc1 = ccross(y[9], y[11], 15000)
+cc2 = ccross(y[11], y[10], 15000)
 print('Time for 3 crosscorrs: % f' % (time.time() - start_corrs))
 print('Correlated pair: %s' % (paircorr, ))
 print('Crosscorr 0,1: %f ' % cc0)
 print('Crosscorr 0,2: %f ' % cc1)
 print('Crosscorr 1,2: %f ' % cc2)
 
-#fig2 = plotcouplings(params['individual'], matrix_exc, matrix_inh, params=params,
-                    # minmaxvals=(0, np.amax(params['individual'])), bandw=True)
+fig2 = plotcouplings(params['individual'], matrix_exc, matrix_inh, params=params,
+                     minmaxvals=(0, np.amax(params['individual'])), bandw=True)
 #fig2.savefig('Testin.png')
-#plt.show()
+plt.show()
 
 # Other test shit
 """
