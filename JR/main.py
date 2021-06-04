@@ -13,7 +13,7 @@ from fitfuns import fit_func_cross_V3
 from filefuns import check_create_results_folder, test_folder
 from signals import build_dataset
 import galgs
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 
 # JR MODEL PARAMETERS
 params = dict(A=3.25, B=22.0, v0=6.0)
@@ -61,13 +61,13 @@ params['test_dataset'] = build_dataset(int(2*params['n']),
                                        params['pairs'], t, offset=10)
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
-num_generations = 100
-popsize = 20       # Population size
+num_generations = 200
+popsize = 200       # Population size
 mutindprob = 0.1    # Probability that an individual undergoes mutation
 coprob = 0.8        # Crossover probability
 maxgene = 0.2*C     # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
-par_processes = 20  # How many cores will be used in order to parallelize the GA.
+par_processes = 32  # How many cores will be used in order to parallelize the GA.
 L = 35              # After how many non-improving generations exctinction occurs
 
 # Maybe coprob=0.5 and mutindprob=0.2 are not the best, imma try for the next
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     results_dir = check_create_results_folder()
     newfolder = test_folder(results_dir)
     fig_idx = 1
-    cheatlist = galgs.get_OP(params)
+    cheatlist = maxgene*np.random.rand(indivsize)
     # If we want to see how will the first layer nodes behave we have to uncomment
     # this piece of code:
     with Pool(processes=par_processes) as piscina:
@@ -111,6 +111,7 @@ if __name__ == '__main__':
         fig_normevol.savefig(newfolder + "/normevol.jpg")
 
         np.save(newfolder + '/best_ind', solution)  # Save the best individual
+        np.save(newfolder + '/best_sols', bestsols)
         plt.show()
 
         # Finally print the tests results and plot some of the dynamics

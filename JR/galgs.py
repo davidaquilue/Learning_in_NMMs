@@ -191,7 +191,7 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
         # Selection of the best individuals from the previous population
         # I noticed that i am not implementing elitism which might be very
         # important in our case.
-        elite_size = int(np.ceil(0.25*len(pop)/2)*2)  # Make sure it's even 
+        elite_size = int(np.ceil(0.10*len(pop)/2)*2)  # Make sure it's even 
         elite = toolbox.select(pop, elite_size)
         offspring = toolbox.select(pop, len(pop)-elite_size)
         offspring = list(toolbox.map(toolbox.clone, offspring))
@@ -216,14 +216,13 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
 
         # And finally reassign the offspring as the new population:
         offspring.extend(elite)
-        bestind = toolbox.select(offspring, 1)[0]  # Outputs [[bestind]], thus indexing
-        bestfits = bestind.fitness.values  # Best fitness values of the generation
         pop[:] = offspring
 
         # Storing different results
         if v == 1:  # If version 1, only one value of fitness is returned
             fits = np.array([ind.fitness.values[0] for ind in pop])
-            maxfit = bestfits[0]
+            idx = np.argmax(fits)
+            maxfit = fits[idx]
             maxfits.append(maxfit)
             avgfits.append(np.mean(fits))
 
@@ -232,12 +231,13 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
             fit1 = np.array([ind.fitness.values[1] for ind in pop])
             fit2 = np.array([ind.fitness.values[2] for ind in pop])
             fits = (fit0+fit1+fit2)/3
-            maxfits[i, :] = np.array(bestfits)
-            maxfit = np.mean(np.array(bestfits))  # For the extinction process we take the average fitness of bestind
+            idx = np.argmax(fits)
+            maxfits[i, :] = np.array([fit0[idx], fit1[idx], fit2[idx]])
+            maxfit = fits[idx]
             avgfits.append(np.mean(fits))
 
         overall_fit.append(maxfit)
-        bestsols[i, :] = bestind
+        bestsols[i, :] = pop[idx]
         gens_passed_after_ext += 1
 
         # Now we check for extinction:

@@ -3,8 +3,8 @@
 Functions included: plot3x3, plot3x3_signals, plotanynet, plotcouplings3x3, plotcouplings3x3V2, plotgenfit,
 plot_bestind_normevol"""
 
-#import matplotlib
-#matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import cm
 from matfuns import psd, findlayer, fastcrosscorrelation as ccross
 import numpy as np
