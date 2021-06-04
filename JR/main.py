@@ -62,12 +62,12 @@ params['test_dataset'] = build_dataset(int(2*params['n']),
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
 num_generations = 100
-popsize = 120       # Population size
+popsize = 20       # Population size
 mutindprob = 0.1    # Probability that an individual undergoes mutation
 coprob = 0.8        # Crossover probability
 maxgene = 0.2*C     # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
-par_processes = 34  # How many cores will be used in order to parallelize the GA.
+par_processes = 20  # How many cores will be used in order to parallelize the GA.
 L = 35              # After how many non-improving generations exctinction occurs
 
 # Maybe coprob=0.5 and mutindprob=0.2 are not the best, imma try for the next

@@ -474,8 +474,9 @@ def plot_fftoutputs(y, params, newfolder):
     fig.savefig(newfolder + '/fftoutputs.png')
 
 
-def plot_corrs(y, params):  # Mes endavant ja fare que es guardi en un folder si la necessito
+def plot_corrs(y, ii, params, newfolder):
     nnodes = params['Nnodes']
+    pair = params['pairs'][ii]
     corr_array = np.zeros((nnodes, nnodes))
     tickslab = []
     for ii in range(nnodes):
@@ -487,8 +488,9 @@ def plot_corrs(y, params):  # Mes endavant ja fare que es guardi en un folder si
     im = ax.imshow(corr_array, vmin=0, vmax=1)
     ticks = np.linspace(0, nnodes-1, nnodes)
     ax.set(xticks=ticks, xticklabels=tickslab, yticks=ticks, yticklabels=tickslab,
-           title='Cross-correlations between nodes')
+           title='Cross-correlations between nodes. (%i, %i) set' % pair)
     fig.colorbar(im)
+    fig.savefig(newfolder + '/corrs' + str(ii) + '.png')
 
     return fig
 

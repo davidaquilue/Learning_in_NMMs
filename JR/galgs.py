@@ -5,7 +5,7 @@ from deap import base, creator, tools
 from tqdm import tqdm
 from matfuns import fastcrosscorrelation as ccross
 from networkJR import obtaindynamicsNET
-from plotfuns import plot_363, plotinputsoutputs
+from plotfuns import plot_363, plotinputsoutputs, plot_corrs
 import matplotlib.pyplot as plt
 import numpy as np
 from tabulate import tabulate
@@ -141,7 +141,7 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
 def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
                          indsize, toolbox, creator, parallel, L, cheatlist,
                          pool=None, v=2):
-    '''
+    """
     Runs the DEAP Genetic Algorithm. Main characteristics of the algorithm need to be passed now:
 
     num_generations: Number of generations that the GA will run
@@ -163,7 +163,7 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
     avgfits:    A list containing the average fitness in each generation
 
     If we are using parallel processing, the with Pool as pool has to be called inside if __name__=='__main__'
-    '''
+    """
     if parallel:
         toolbox.register('map', pool.map)
     else:
@@ -216,54 +216,56 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
 
         # And finally reassign the offspring as the new population:
         offspring.extend(elite)
+        bestind = toolbox.select(offspring, 1)[0]  # Outputs [[bestind]], thus indexing
+        bestfits = bestind.fitness.values  # Best fitness values of the generation
         pop[:] = offspring
 
         # Storing different results
-        if v == 1: # If version 1, only one value of fitness is returned
+        if v == 1:  # If version 1, only one value of fitness is returned
             fits = np.array([ind.fitness.values[0] for ind in pop])
-            idx = np.argmax(fits)
-            maxfit = fits[idx]
+            maxfit = bestfits[0]
             maxfits.append(maxfit)
             avgfits.append(np.mean(fits))
 
-        elif v == 2: # If version 2, three different fitness values are returned
+        elif v == 2:  # If version 2, three different fitness values are returned
             fit0 = np.array([ind.fitness.values[0] for ind in pop])
             fit1 = np.array([ind.fitness.values[1] for ind in pop])
             fit2 = np.array([ind.fitness.values[2] for ind in pop])
             fits = (fit0+fit1+fit2)/3
-            idx = np.argmax(fits)
-            maxfits[i,:] = np.array([fit0[idx], fit1[idx], fit2[idx]])
-            maxfit = fits[idx]
+            maxfits[i, :] = np.array(bestfits)
+            maxfit = np.mean(np.array(bestfits))  # For the extinction process we take the average fitness of bestind
             avgfits.append(np.mean(fits))
-        
+
         overall_fit.append(maxfit)
-        bestsols[i,:] = np.array(pop[idx])
+        bestsols[i, :] = bestind
         gens_passed_after_ext += 1
 
         # Now we check for extinction:
-        if gens_passed_after_ext  > L:
+        if gens_passed_after_ext > L:
             extinction = True
-            for ffit in overall_fit[i-L+1:]:# We check if one of the last L-1 best fitnesses is bigger than the fitness L generations before
+            for ffit in overall_fit[i-L+1:]:
+                # We check if one of the last L-1 best fitnesses is bigger than that of the actualgen-L
                 if np.abs(ffit) > np.abs(1.2*overall_fit[i-L]):
-                    # If only one of the last fitnesses is 20% than the first one of the L before the actual generations, no extinction
+                    # If only one of the last L fitnesses is 20% better than the actualgen-L, no extinction
                     extinction = False
 
             if extinction:
-                pop = toolbox.population(n = popsize) # We rewrite the population with newly generated individuals
-                pop[0] = creator.Individual(bestsols[i, :].tolist())  # But the first of the individuals will be the best solution of the generation before extinction
+                pop = toolbox.population(n=popsize)  # We rewrite the population with newly generated individuals
+                pop[0] = creator.Individual(bestsols[i, :].tolist())
+                # But the first of the individuals will be the best solution of the generation before extinction
                 # It's important to use the creator individual so that it will have the same attributes of before
-                # Same process as before.
-                fitnesses = list(toolbox.map(toolbox.evaluate, pop))
+
+                fitnesses = list(toolbox.map(toolbox.evaluate, pop))  # Reevaluate the fitnesses of the new population
                 for ind, fit in zip(pop, fitnesses):
                     ind.fitness.values = fit
 
-                extinction_generations.append(i) # In this array we store the generations in which there has been an extinction.
+                extinction_generations.append(i)  # We store the generations in which there has been an extinction.
                 gens_passed_after_ext = 0
 
     return maxfits, avgfits, bestsols, extinction_generations
 
 
-def test_solution(params, newfolder, whatplot='net', rangeplot ='large'):
+def test_solution(params, newfolder, whatplot='net', rangeplot='large'):
     """!!!IT WORKS FOR THE 363 NETWORK ONLY RIGHT NOW!!!
     This function obtains the dynamics from the testing set and plots
     some of the dynamics. It also prints and saves the correlations between
@@ -316,18 +318,20 @@ def test_solution(params, newfolder, whatplot='net', rangeplot ='large'):
         # Then we obtain a sample plot for each of the correlation pairs.
         if ii == 0:
             fig0 = pltfun(y, t, rangeplot, params, True, params['signals'])
+            corrs0 = plot_corrs(y, ii, params, newfolder)
             fig0.savefig(saving)
         elif ii == 1:
             fig1 = pltfun(y, t, rangeplot, params, True, params['signals'])
+            corrs1 = plot_corrs(y, ii, params, newfolder)
             fig1.savefig(saving)
         else:
             fig2 = pltfun(y, t, rangeplot, params, True, params['signals'])
+            corrs2 = plot_corrs(y, ii, params, newfolder)
             fig2.savefig(saving)
     f.close()
     f = open(newfolder+'/correlation.txt', 'r')
     print(f.read())  # This way we save the results in a .txt file for later
     plt.show()
-
 
 
 def get_OP(params):
