@@ -285,7 +285,7 @@ def test_solution(params, newfolder, whatplot='net', rangeplot='large'):
     pairsi = ((1, 2), (0, 2), (0, 1))
     pairsf = ((10, 11), (9, 11), (9, 10))
     listheaders = ['Signals', 'Corrs', 'First Layer', 'Corrs', 'Last layer', 'Corrs']  # Table things
-    for ii, synch_pair in enumerate(outpairs):
+    for ii, synch_pair in enumerate(outpair s):
         # Iterate over evey pair of possible correlations
         saving = newfolder + '/Dynamics' + str(ii) + rangeplot + '.png'
 
