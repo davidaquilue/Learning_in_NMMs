@@ -41,7 +41,7 @@ params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
 params['tstep'] = 0.001
-params['tspan'] = (0, 2000)
+params['tspan'] = (0, 500)
 
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))

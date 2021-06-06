@@ -362,6 +362,8 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
      with best fitness."""
     fig, axes = plt.subplots(1, 2, figsize=(10, 6))
     weights_exc, weights_inh = individual_to_weights(solution, matrix_exc, matrix_inh)
+    weights_exc = np.ma.masked_where(weights_exc == 0, weights_exc)
+    weights_inh = np.ma.masked_where(weights_inh == 0, weights_inh)
     nnodes = matrix_exc.shape[0]
     ticks = np.linspace(0, nnodes-1, nnodes)
 
@@ -369,11 +371,19 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
     ax.imshow(weights_exc, vmin=maxminvals[0], vmax=maxminvals[1])
     ax.set(title='Excitatory Coupling Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
            xticks=ticks, yticks=ticks)
+    ax.set_xticks(np.arange(-.5, nnodes - 1, 1), minor=True)
+    ax.set_yticks(np.arange(-.5, nnodes - 1, 1), minor=True)
+    ax.grid(which='minor', color='k')
+
     ax = axes[1]
     im = ax.imshow(weights_inh, vmin=maxminvals[0], vmax=maxminvals[1])
     ax.set(title='Excitatory Coupling Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
            xticks=ticks, yticks=ticks)
     fig.subplots_adjust(right=0.8)
+    ax.set_xticks(np.arange(-.5, nnodes - 1, 1), minor=True)
+    ax.set_yticks(np.arange(-.5, nnodes - 1, 1), minor=True)
+    ax.grid(which='minor', color='k')
+
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     fig.colorbar(im, cax=cbar_ax)
     return fig
@@ -562,6 +572,8 @@ def plotcouplings(solution, matrix_exc, matrix_inh, minmaxvals, params, bandw=Fa
     the vector of the individiual with best fitness."""
     fig, axes = plt.subplots(2, 2, figsize=(10, 10))
     weights_exc, weights_inh = individual_to_weights(solution, matrix_exc, matrix_inh)
+    weights_exc = np.ma.masked_where(weights_exc == 0, weights_exc)
+    weights_inh = np.ma.masked_where(weights_inh == 0, weights_inh)
     nnodes = matrix_exc.shape[0]
     ticks = np.linspace(0, nnodes-1, nnodes)
     if bandw:

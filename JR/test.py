@@ -6,15 +6,12 @@ import matplotlib.pyplot as plt
 from signals import build_p_inputs
 from matfuns import fastcrosscorrelation as ccross, findlayer, psd, networkmatrix_exc_inh
 from networkJR import obtaindynamicsNET
-from plotfuns import plotcouplings, plot_corrs, plot_363
+from plotfuns import plotcouplings, plot_corrs, plot_363, plotcouplings3x3V2
 from galgs import test_solution
 from main import params
 from fitfuns import fit
 import time
 
-
-
-start_params = time.time()
 # Set up of JR params
 params = dict(A=3.25, B=22.0, v0=6.0)
 params['a'], params['b'], params['e0'] = 100.0, 50.0, 2.5
@@ -39,7 +36,51 @@ Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], p
 params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
-# Quan tots estan a 0.3C el valor mig puja força pero sembla que es podra treballar en aquest regim
+maxval = 0.2*C
+bestsols = np.load('best_sols.npy')
+bestsols = bestsols[100:]
+
+mean_sol = np.mean(bestsols, 0)
+figsols = plotcouplings(mean_sol, matrix_exc, matrix_inh, params=params,
+                        minmaxvals=(0, np.amax(mean_sol)), bandw=True)
+figsols.savefig('meansols.png')
+
+TPST = np.load('TPST.npy')
+diff = TPST-mean_sol
+figdiff = plotcouplings3x3V2(mean_sol, matrix_exc, matrix_inh, maxminvals=(np.amin(diff), np.amax(diff)))
+figdiff.savefig('diffs.png')
+
+TPT1 = np.load('TPT1.npy')
+TPT2 = np.load('TPT2.npy')
+TPM = np.load('TPM.npy')
+
+st1 = TPST - TPT1
+figst1 = plotcouplings3x3V2(st1, matrix_exc, matrix_inh, maxminvals=(-maxval, maxval))
+figst1.savefig('st1.png')
+
+st2 = TPST - TPT2
+figst1 = plotcouplings3x3V2(st2, matrix_exc, matrix_inh, maxminvals=(-maxval, maxval))
+figst1.savefig('st2.png')
+
+stm = TPST - TPM
+figst1 = plotcouplings3x3V2(stm, matrix_exc, matrix_inh, maxminvals=(-maxval, maxval))
+figst1.savefig('stm.png')
+
+# Added running changes in the last 100 generations of the Sense trampes test
+gens = bestsols.shape[0]
+runsum = np.zeros(bestsols.shape[1])
+for n in range(1, gens):
+    runsum += bestsols[n] - bestsols[n-1]
+
+print(runsum)
+
+figsum = plotcouplings3x3V2(runsum, matrix_exc, matrix_inh, maxminvals=(np.amin(runsum), np.amax(runsum)))
+figsum.savefig('sum.png')
+
+
+
+
+"""
 maxval = 0.4*C
 # Matrix exc és una matriu Nnodes X Nnodes, igual que matrix inh. Columna ii determina a quins nodes el node ii afecta
 # fila ii determina quins nodes afecten al node ii
@@ -117,7 +158,7 @@ fig2 = plotcouplings(params['individual'], matrix_exc, matrix_inh, params=params
                      minmaxvals=(0, np.amax(params['individual'])), bandw=True)
 #fig2.savefig('Testin.png')
 plt.show()
-
+"""
 # Other test shit
 """
 inputnodes = 3
