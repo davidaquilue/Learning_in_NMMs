@@ -41,7 +41,7 @@ params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
 params['tstep'] = 0.001
-params['tspan'] = (0, 500)
+params['tspan'] = (0, 2000)
 
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
@@ -62,12 +62,12 @@ params['test_dataset'] = build_dataset(int(2*params['n']),
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
 num_generations = 200
-popsize = 200       # Population size
-mutindprob = 0.1    # Probability that an individual undergoes mutation
-coprob = 0.8        # Crossover probability
-maxgene = 0.2*C     # Maximum coupling value of a connection
+popsize = 300       # Population size
+mutindprob = 0.25   # Probability that an individual undergoes mutation
+coprob = 0.7        # Crossover probability
+maxgene = 0.1*C     # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
-par_processes = 32  # How many cores will be used in order to parallelize the GA.
+par_processes = 40  # How many cores will be used in order to parallelize the GA.
 L = 35              # After how many non-improving generations exctinction occurs
 
 # Maybe coprob=0.5 and mutindprob=0.2 are not the best, imma try for the next

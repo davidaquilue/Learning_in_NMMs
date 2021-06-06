@@ -245,7 +245,7 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
             extinction = True
             for ffit in overall_fit[i-L+1:]:
                 # We check if one of the last L-1 best fitnesses is bigger than that of the actualgen-L
-                if np.abs(ffit) > np.abs(1.2*overall_fit[i-L]):
+                if np.abs(ffit) > overall_fit[i-L] + 0.1*np.abs(overall_fit[i-L]):
                     # If only one of the last L fitnesses is 20% better than the actualgen-L, no extinction
                     extinction = False
 
@@ -285,7 +285,7 @@ def test_solution(params, newfolder, whatplot='net', rangeplot='large'):
     pairsi = ((1, 2), (0, 2), (0, 1))
     pairsf = ((10, 11), (9, 11), (9, 10))
     listheaders = ['Signals', 'Corrs', 'First Layer', 'Corrs', 'Last layer', 'Corrs']  # Table things
-    for ii, synch_pair in enumerate(outpair s):
+    for ii, synch_pair in enumerate(outpairs):
         # Iterate over evey pair of possible correlations
         saving = newfolder + '/Dynamics' + str(ii) + rangeplot + '.png'
 
