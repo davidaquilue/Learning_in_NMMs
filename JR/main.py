@@ -13,20 +13,20 @@ from fitfuns import fit_func_cross_V3
 from filefuns import check_create_results_folder, test_folder
 from signals import build_dataset
 import galgs
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 
 # JR MODEL PARAMETERS
 params = dict(A=3.25, B=22.0, v0=6.0)
 params['a'], params['b'], params['e0'] = 100.0, 50.0, 2.5
-params['pbar'], params['delta'], params['f'] = 155.0, 65.0, 8.5
+params['pbar'] = 155.0
 
 params['C'] = C = 133.5
 params['C1'], params['C2'], params['C3'], params['C4'] = C, 0.8*C, 0.25*C, 0.25*C  # Dimensionless
 
 params['r'] = 0.56  # mV^(-1)
 
-params['delta'] = 72.09
-params['f'] = 8.6
+params['delta'] = 0
+params['f'] = 0
 
 # NETWORK ARCHITECTURE PARAMETERS
 params['tuplenetwork'] = (3, 6, 3)

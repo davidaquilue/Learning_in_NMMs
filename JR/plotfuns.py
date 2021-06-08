@@ -4,7 +4,7 @@ Functions included: plot3x3, plot3x3_signals, plotanynet, plotcouplings3x3, plot
 plot_bestind_normevol"""
 
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 from matplotlib import cm
 from matfuns import psd, findlayer, fastcrosscorrelation as ccross
 import numpy as np

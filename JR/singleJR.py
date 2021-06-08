@@ -30,7 +30,7 @@ def derivatives(x, t, paramtup, n):
     y1 = x[3]
     z2 = x[4]
     y2 = x[5]
-    pbar = np.random.uniform(120, 360)
+    #pbar = np.random.uniform(120, 360)
     # Derivatives of each variable.
     dz0 = A*a*S(y1-y2,e0,r,v0) - 2*a*z0 - a**2*y0
     dy0 = z0
@@ -129,7 +129,8 @@ def obtaindynamics(params, tspan, tstep, derivatives, unpacking):
     tstep:  Timestep
     '''
     funparams = unpacking(params)
-    x0 = 5*np.random.normal(size=6)  # starting from random normally distributed IC
+    #x0 = 5*np.random.normal(size=6)  # starting from random normally distributed IC
+    x0 = params['x0']
     x1, t1 = Heun_nonoise(x0, tspan, tstep, derivatives, funparams)  # We want to get rid of the transitory in the ode.
     x, t = x1[10000:], t1[10000:]  # First ten seconds omitted, enough for it to converge.
     # Select from the 6 ODEs those corresponding to the excitatory and inhibitory PSPs
