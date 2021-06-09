@@ -1,13 +1,13 @@
 """ Final figures for the TFG report"""
 import numpy as np
+from matplotlib import rc
 import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
-params = {'text.usetex': True}
-plt.rcParams.update(params)
+import sys
 from signals import build_p_inputs, build_dataset, build_p_inputs_shifted, build_p_vector_soft, p_times, p_amplitudes, build_p_vector
 from matfuns import fastcrosscorrelation, findlayer, psd
 from singleJR import obtaindynamics, derivatives_signal, unpacking_signal, derivatives, unpacking
 
+plt.style.use('./tfg.mplstyle')
 
 """
 from main import params
@@ -61,5 +61,5 @@ for nn, pbar in enumerate(pbars):
     plt.xlim(10, 15)
     plt.xlabel('Time ($s$)')
     plt.ylabel('$y_1 - y_2$ ($mV$)')
-
+plt.savefig('/home/david/Desktop/test.png')
 plt.show()

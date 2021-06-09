@@ -2,6 +2,7 @@
 
 Contains: '''
 import os
+import pickle
 
 def check_create_results_folder():
     '''If results dir is not in the working dir it creates it'''
@@ -51,3 +52,4 @@ def get_num(results_dir):
         test_dir = results_dir + new_test
 
     return test_dir
+

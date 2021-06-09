@@ -41,10 +41,10 @@ params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
 params['tstep'] = 0.001
-params['tspan'] = (0, 500)
+params['tspan'] = (0, 2000)
 
 # INPUT SIGNALS: TRAINING AND TESTING SETS
-t = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
+params['t'] = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
 
 params['pairs'] = ((1, 2), (0, 2), (0, 1))  # Pairs of correlated first layer nodes
 idx = params['Nnodes'] - params['tuplenetwork'][-1]
@@ -52,27 +52,25 @@ idx = params['Nnodes'] - params['tuplenetwork'][-1]
 params['output_pairs'] = tuple([(idx + pair[0], idx + pair[1]) for pair in params['pairs']])
 # Correlated nodes at the output, basically: ((10, 11), (9, 11), (9,10)) with more freedom
 
-params['unsync'] = (0, 1, 2)  # Unsynchronized nodes, have to align with the correlated pairs.
-params['n'] = 1  # Amount of elements in the training set, at least 10
+params['unsync'] = (0, 1, 2)    # Unsynchronized nodes, have to align with the correlated pairs.
+params['n'] = 1                 # Amount of elements in the training set, depending on the tspan more or less
+params['offset'] = 10           # Baseline of the input vector
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
-                                        params['pairs'], t, offset=10)
-params['test_dataset'] = build_dataset(int(2*params['n']),
-                                       params['tuplenetwork'][0],
-                                       params['pairs'], t, offset=10)
+                                        params['pairs'], params['t'], offset=params['offset'])
+
+# Test test dataset will be set up in the plotting results file
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
-num_generations = 200
-popsize = 300       # Population size
-mutindprob = 0.25   # Probability that an individual undergoes mutation
-coprob = 0.7        # Crossover probability
-maxgene = 0.1*C     # Maximum coupling value of a connection
-mingene = 0         # Minimum coupling value of a connection
-par_processes = 40  # How many cores will be used in order to parallelize the GA.
-L = 35              # After how many non-improving generations exctinction occurs
+params['num_generations'] = num_generations = 200
+params['popsize'] = popsize = 300           # Population size
+params['mutindprob'] = mutindprob = 0.25    # Probability that an individual undergoes mutation
+params['coprob'] = coprob = 0.7             # Crossover probability
+params['maxvalue'] = maxgene = 0.1*C        # Maximum coupling value of a connection
+params['minvalue'] = mingene = 0            # Minimum coupling value of a connection
+par_processes = 40                          # How many cores will be used in order to parallelize the GA.
+params['L'] = L = 40                        # After how many non-improving generations exctinction occurs
 
-# Maybe coprob=0.5 and mutindprob=0.2 are not the best, imma try for the next
-# test the values coprob=0.8 and mutindprob=0.1
-params['maxvalue'] = maxgene
+
 # Initialization of the necessary GA functions:
 # this has to go before the if name = main and before running the algorithm.
 toolbox, creator = galgs.initiate_DEAP(fit_func_cross_V3, params,
@@ -84,43 +82,22 @@ if __name__ == '__main__':
     results_dir = check_create_results_folder()
     newfolder = test_folder(results_dir)
     fig_idx = 1
+
+    # Setting up a first individual that we know it works to improve convergence.
+    # cheatlist = galgs.get_OP(params)
     cheatlist = maxgene*np.random.rand(indivsize)
-    # If we want to see how will the first layer nodes behave we have to uncomment
-    # this piece of code:
+
+    # Run Genetic Algorithm with parallel fitness evaluations of individuals.
     with Pool(processes=par_processes) as piscina:
         # Running GA
-        maxfits, avgfits, bestsols, ext_gens = galgs.main_DEAP_extinction(num_generations,
-                                                                          popsize, mutindprob,
-                                                                          coprob, indivsize, toolbox,
-                                                                          creator, 1, L, cheatlist, piscina, v=2)
-        maxfits_avg = np.mean(maxfits, axis=1)  # Mean of the different fitnesses
-        best_indivs_gen = np.argmax(maxfits_avg)  # Generation of the optimal individual
-        solution = bestsols[best_indivs_gen]  # Optimal individual
-        solution = np.array(solution)
-        # Plot the maximum fitnesses and average fitnesses of each generation
-        fig_genfit = plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, ext_gens, v=2)
-        fig_genfit.savefig(newfolder + "/fitness.jpg")
-        
-        # Show the coupling matrices corresponding to the best individual of the evolution
-        fig_couplings = plotcouplings(solution, params['matrix_exc'], params['matrix_inh'],
-                                      (mingene, np.amax(solution)), params, True)
-        fig_couplings.savefig(newfolder + "/bestweights.jpg")
-
-        # Plot the evolution of the norm of the best solution
-        fig_normevol = plot_bestind_normevol(bestsols, num_generations, params)
-        fig_normevol.savefig(newfolder + "/normevol.jpg")
-
-        np.save(newfolder + '/best_ind', solution)  # Save the best individual
-        np.save(newfolder + '/best_sols', bestsols)
-        plt.show()
-
-        # Finally print the tests results and plot some of the dynamics
-        params['individual'] = solution
-        
-        params['signals'] = params['test_dataset'][0][0]
-        y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
-        modidx = int(params['tspan'][-1]-10)*1000
-        plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
-        plot_fftoutputs(y, params, newfolder)
-        galgs.test_solution(params, newfolder, whatplot='net')
-
+        maxfits, avgfits, bestsols, extgens = galgs.main_DEAP_extinction(num_generations,
+                                                                         popsize, mutindprob,
+                                                                         coprob, indivsize, toolbox,
+                                                                         creator, 1, L, cheatlist, piscina, v=2)
+        # Save the needed variables to later plot
+        np.save(newfolder + '/maxfits.npy', maxfits)
+        np.save(newfolder + '/avgfits.npy', avgfits)
+        np.save(newfolder + '/extgens.npy', np.array(extgens))
+        np.save(newfolder + '/bestsols.npy', bestsols)
+        del params['train_dataset']  # We are not interested in saving the training set.
+        np.save(newfolder + '/params.npy', params)
