@@ -38,7 +38,7 @@ params['r'] = 0.56
 params['delta'] = 0
 params['f'] = 0
 
-pbars = [60, 70, 115, 155]  # low node, high node, spikes, alpha
+pbars = [60, 115, 155, 70]  # low node, high node, spikes, alpha
 x00 = np.array([1, 1, 1, 1, 1, 1])    # low node
 x01 = np.array([2.6291297, 0.16272113, -1.47501781, -8.43321622,  0.86793527, -2.67579234])
 x02 = np.array([10, 0, 10, 0, 0, 0])  # spikes
@@ -46,13 +46,13 @@ for nn, pbar in enumerate(pbars):
     if nn == 0:
         params['x0'] = x00
         col = 'b'
-    elif nn == 1:
+    elif nn == 3:
         params['x0'] = x01
         col = 'c'
-    elif nn == 2:
+    elif nn == 1:
         params['x0'] = x02
         col = 'r'
-    elif nn == 3:
+    elif nn == 2:
         params['x0'] = x02
         col = 'g'
     params['pbar'] = pbar
@@ -61,5 +61,6 @@ for nn, pbar in enumerate(pbars):
     plt.xlim(10, 15)
     plt.xlabel('Time ($s$)')
     plt.ylabel('$y_1 - y_2$ ($mV$)')
+    plt.ylim((-1, 12))
 plt.savefig('/home/david/Desktop/test.png')
 plt.show()

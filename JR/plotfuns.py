@@ -373,27 +373,29 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
 def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_generations = [], v = 1):
     '''Returns the plot of the highest and average fitnesses per generation. Additionally 
     indicates extinctions and the best individual's fitnesses'''
-    fig, ax = plt.subplots(1,1, figsize = (18,9))
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
 
     gens = np.arange(0, num_generations)
     if v == 1:
-        ax.plot(gens, maxfits, label = "Best individual's fitness")
-        ax.plot(best_indivs_gen, maxfits[best_indivs_gen], 'r*', label = 'Optimal individual in algorithm')
+        ax.plot(gens, maxfits, label="Best individual's fitness")
+        ax.plot(best_indivs_gen, maxfits[best_indivs_gen], 'r*', label='Optimal individual in algorithm')
     elif v == 2:
-        ax.plot(gens, maxfits[:,0], label = "Best individual's fitness 0")
-        ax.plot(gens, maxfits[:,1], label = "Best individual's fitness 1")
-        ax.plot(gens, maxfits[:,2], label = "Best individual's fitness 2")
-        ax.plot(gens, avgfits, label = "Average fitness of population")
-        ax.plot(best_indivs_gen*np.ones(3), maxfits[best_indivs_gen,:], 'r*', label = 'Optimal individual in algorithm')
+        ax.plot(gens, maxfits[:, 0], label="Best individual's fitness 0")
+        ax.plot(gens, maxfits[:, 1], label="Best individual's fitness 1")
+        ax.plot(gens, maxfits[:, 2], label="Best individual's fitness 2")
+        ax.plot(gens, avgfits, label="Average fitness of population")
+        ax.plot(best_indivs_gen*np.ones(3), maxfits[best_indivs_gen, :], 'r*',
+                label='Optimal individual in algorithm')
     else:
         print("Select proper v. Corresponding to the GA's v.")
 
     for extinction in extinction_generations: ax.axvline(extinction, c='k')
-    ax.plot([],[], 'k', label = 'Extinction in the generation')
+    ax.plot([], [], 'k', label='Extinction in the generation')
     ax.set_title('Evolution of fitness')
     ax.set_xlabel('Generations')
     ax.set_ylabel('Fitness')
-    ax.legend(bbox_to_anchor = (1.04,1), borderaxespad=0)
+    ax.legend()
+    #ax.legend(bbox_to_anchor=(1.04,1), borderaxespad=0) # Yo creo que no hace falta tenerlo fuera
     plt.tight_layout()
     return fig
 

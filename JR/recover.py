@@ -22,7 +22,8 @@ avgfits = np.load(newfolder + '/avgfits.npy')
 ext_gens = np.load(newfolder + '/extgens.npy')
 bestsols = np.load(newfolder + '/bestsols.npy')
 params = np.load(newfolder + '/params.npy', allow_pickle=True).item()
-params['t'] = params['t'][0:250000]
+params['tspan'] = (0, 500)
+params['t'] = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
 params['test_dataset'] = build_dataset(int(2*params['n']),
                                        params['tuplenetwork'][0],
                                        params['pairs'], params['t'], offset=params['offset'])

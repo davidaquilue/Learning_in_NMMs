@@ -12,7 +12,7 @@ text.usetex : True
 font.family: Palatino
 legend.loc : best
 
-figure.figsize : 6, 4
+figure.figsize : 6, 5
 
 savefig.dpi : 300
 savefig.bbox : tight
