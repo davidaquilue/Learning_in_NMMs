@@ -52,4 +52,3 @@ y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
 modidx = int(params['tspan'][-1] - 10) * 1000
 plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
 test_solution(params, newfolder, whatplot='net')
-
