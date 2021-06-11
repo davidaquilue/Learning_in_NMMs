@@ -11,8 +11,9 @@ from filefuns import check_create_results_folder, get_num
 from plotfuns import plot_inputs, plotcouplings, plot_genfit, plot_bestind_normevol, plot_corrs, plot_363
 
 typical_recover = True
-all_nodes = False
+all_nodes = True
 no_nodes = True
+visualize_best = False
 
 # The folder that will be used to run this script will always be the last one in the Results folder.
 print('Ignore the following printed line:')
@@ -47,7 +48,7 @@ else:
 
 
 # Now we rearrange some of the params for faster simulations
-params['tspan'] = (0, 1000)
+params['tspan'] = (0, 500)
 params['t'] = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
 params['individual'] = solution
 if typical_recover:
@@ -63,7 +64,7 @@ if typical_recover:
 
     # Show the coupling matrices corresponding to the best individual of the evolution
     fig_couplings = plotcouplings(solution, params['matrix_exc'], params['matrix_inh'],
-                                  (params['minvalue'], np.amax(solution)), params, True)
+                                  (params['minvalue'], params['maxvalue']), params, True)
     fig_couplings.savefig(newfolder + "/bestweights.jpg")
 
     # Plot the evolution of the norm of the best solution
@@ -99,5 +100,18 @@ if no_nodes:
     plot_corrs(y, 0, params, newfolder)
     fig_none = plot_363(y, t, 'small', params, True, params['signals'])
     fig_none.savefig(newfolder + '/Dynamics_none.png')
+
+if visualize_best:
+    # A lo mejor se podria hacer una animación más currada, o un análisis más matemático o así.
+    ii = 1
+    for gg, bestsol in enumerate(bestsols):
+        if maxfits_avg[gg] > 2.75:
+            fig_couplings = plotcouplings(bestsol, params['matrix_exc'], params['matrix_inh'],
+                                          (params['minvalue'], params['maxvalue']), params, True)
+            ii += 1
+            if ii >= 20:
+                plt.show()
+                ii = 1
+
 
 # See how it goes with everything the same but only with two different regimes (node and alpha) nyeh complicat

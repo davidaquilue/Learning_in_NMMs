@@ -4,7 +4,7 @@ Functions included: plot3x3, plot3x3_signals, plotanynet, plotcouplings3x3, plot
 plot_bestind_normevol"""
 
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 from matplotlib import cm
 from matfuns import psd, findlayer, fastcrosscorrelation as ccross
 import numpy as np
@@ -498,7 +498,7 @@ def plot_corrs(y, idx, params, newfolder):
     return fig
 
 
-def draw_neural_net(ax, left, right, bottom, top, layer_sizes, conn_matrix, maxvalue, bandw = False):
+def draw_neural_net(ax, left, right, bottom, top, layer_sizes, conn_matrix, maxvalue, bandw=False):
     """
     Draw a neural network cartoon using matplotilb.
 
@@ -531,12 +531,26 @@ def draw_neural_net(ax, left, right, bottom, top, layer_sizes, conn_matrix, maxv
         for m in range(layer_size):
             xcirc = n * h_spacing + left
             ycirc = layer_top - m * v_spacing
-            circle = plt.Circle((xcirc, ycirc), v_spacing / 4.,
+            radius = v_spacing / 4.
+            circle = plt.Circle((xcirc, ycirc), radius,
                                 color='w', ec=cm.tab10(n), zorder=4, lw=3)
             ax.add_artist(circle)
             num_note = r"$\mathbf{" + str(node) + "}$"
             ax.annotate(num_note, xy=(xcirc, ycirc-0.01), zorder=5, xycoords='axes fraction', ha='center',
                         weight='bold')
+
+            # if recurrence, then plot it:
+            if conn_matrix[node, node] != 0:
+                exit_arrow = (xcirc + np.sqrt(2)*radius/2, ycirc + np.sqrt(2)*radius/2)
+                entry_arrow = (xcirc - np.sqrt(2)*radius/2, ycirc + np.sqrt(2)*radius/2)
+                if bandw:
+                    color = str(1 - conn_matrix[node, node]/maxvalue)
+                else:
+                    color = cmap(conn_matrix[node, node]/maxvalue)
+                style_arrow = 'Simple, tail_width=0.5, head_width=0, head_length=8'
+                rec = matplotlib.patches.FancyArrowPatch(exit_arrow, entry_arrow, connectionstyle='arc3,rad=1.2',
+                                                         color=color, arrowstyle=style_arrow)
+                ax.add_artist(rec)
             node += 1
     # Edges
     init_o = 0
@@ -554,7 +568,9 @@ def draw_neural_net(ax, left, right, bottom, top, layer_sizes, conn_matrix, maxv
                 if bandw and float(color) > 0.95:
                     continue
                 line = plt.Line2D([n * h_spacing + left, (n + 1) * h_spacing + left],
-                                  [layer_top_a - m * v_spacing, layer_top_b - o * v_spacing], c=color)
+                                  [layer_top_a - m * v_spacing, layer_top_b - o * v_spacing], c=color,
+                                  dash_capstyle='projecting')
+
                 ax.add_artist(line)
 
         init_m += layer_size_a
@@ -566,6 +582,8 @@ def plotcouplings(solution, matrix_exc, matrix_inh, minmaxvals, params, bandw=Fa
     """Returns an imshow of the excitatory and inhibitory weight matrix plus the network diagrams. solution is
     the vector of the individiual with best fitness."""
     fig, axes = plt.subplots(2, 2, figsize=(9, 9))
+    if np.amax(solution) > minmaxvals[1]:
+        minmaxvals = (minmaxvals[0], np.amax(solution))
     weights_exc, weights_inh = individual_to_weights(solution, matrix_exc, matrix_inh)
     weights_exc = np.ma.masked_where(weights_exc == 0, weights_exc)
     weights_inh = np.ma.masked_where(weights_inh == 0, weights_inh)
@@ -577,7 +595,7 @@ def plotcouplings(solution, matrix_exc, matrix_inh, minmaxvals, params, bandw=Fa
         colormap = cm.get_cmap('viridis')
     ax = axes[0, 0]
     ax.imshow(weights_exc, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
-    ax.set(title='Excitatory Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
+    ax.set(title='Connectivity matrix $E$', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
            xticks=ticks, yticks=ticks)
     ax.set_xticks(np.arange(-.5, params['Nnodes']-1, 1), minor=True)
     ax.set_yticks(np.arange(-.5, params['Nnodes']-1, 1), minor=True)
@@ -585,7 +603,7 @@ def plotcouplings(solution, matrix_exc, matrix_inh, minmaxvals, params, bandw=Fa
 
     ax = axes[0, 1]
     im = ax.imshow(weights_inh, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
-    ax.set(title='Inhibitory Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
+    ax.set(title='Connectivity matrix $I$', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
            xticks=ticks, yticks=ticks)
     ax.set_xticks(np.arange(-.5, params['Nnodes'] - 1, 1), minor=True)
     ax.set_yticks(np.arange(-.5, params['Nnodes'] - 1, 1), minor=True)

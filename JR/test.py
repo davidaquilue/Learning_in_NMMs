@@ -5,8 +5,8 @@ import os
 import matplotlib.pyplot as plt
 from signals import build_p_inputs
 from matfuns import fastcrosscorrelation as ccross, findlayer, psd, networkmatrix_exc_inh
-from networkJR import obtaindynamicsNET
-from plotfuns import plotcouplings, plot_corrs, plot_363, plotcouplings3x3V2
+from networkJR import obtaindynamicsNET, individual_to_weights
+from plotfuns import plotcouplings, plot_corrs, plot_363, plotcouplings3x3V2, draw_neural_net
 from galgs import test_solution
 from main import params
 from fitfuns import fit
@@ -28,7 +28,7 @@ params['f'] = 0
 # MANUAL TESTS TO SEE IF THE NETWORK IS ABLE TO "LEARN" WHAT WE WANT IT TO LEARN
 # NETWORK ARCHITECTURE PARAMETERS
 params['tuplenetwork'] = (3, 6, 3)
-params['recurrent'] = False
+params['recurrent'] = True
 params['forcednodes'] = (0, 1, 2)
 
 Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v=0)
@@ -36,7 +36,15 @@ Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], p
 params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
-maxval = 0.2*C
+indivsize = np.count_nonzero(matrix_exc)
+params['maxvalue'] = maxval = 0.2*C
+random_ind = maxval*np.random.random(2*indivsize)
+weights_exc, weights_inh = individual_to_weights(random_ind, matrix_exc, matrix_inh)
+
+fig, ax = plt.subplots(1, 1)
+draw_neural_net(ax, 0.05, 0.95, 0.05, 0.95, params['tuplenetwork'], weights_exc, params['maxvalue'])
+plt.show()
+"""
 bestsols = np.load('best_sols.npy')
 bestsols = bestsols[100:]
 
@@ -76,7 +84,7 @@ print(runsum)
 
 figsum = plotcouplings3x3V2(runsum, matrix_exc, matrix_inh, maxminvals=(np.amin(runsum), np.amax(runsum)))
 figsum.savefig('sum.png')
-
+"""
 
 
 

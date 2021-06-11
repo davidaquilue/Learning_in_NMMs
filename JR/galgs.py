@@ -1,6 +1,6 @@
-'''Genetic Algorithm functions. 
+"""Genetic Algorithm functions.
 
-Functions included: initiate_DEAP, main_DEAP'''
+Functions included: mutUniform, initiate_DEAP, main_DEAP"""
 from deap import base, creator, tools
 from tqdm import tqdm
 from matfuns import fastcrosscorrelation as ccross
@@ -9,10 +9,46 @@ from plotfuns import plot_363, plotinputsoutputs, plot_corrs
 import matplotlib.pyplot as plt
 import numpy as np
 from tabulate import tabulate
+from itertools import repeat
+
+try:
+    from collections.abc import Sequence
+except ImportError:
+    from collections import Sequence
+
+
+# Mutation function, modified because the ones of the library don't fit exactly my needs:
+def mutUniform(individual, low, high, indpb):
+    """This function applies a uniform mutation with a range [low, high) on
+    the input individual. This mutation expects a
+    :term:`sequence` individual composed of real valued attributes.
+    The *indpb* argument is the probability of each attribute to be mutated.
+    :param individual: Individual to be mutated.
+    :param low: Lower bound of the random value mutation
+    :param high: Higher bound of the random value mutation
+    :param indpb: Independent probability for each attribute to be mutated.
+    :returns: A tuple of one individual.
+    """
+    size = len(individual)
+    if not isinstance(low, Sequence):
+        mu = repeat(low, size)
+    elif len(low) < size:
+        raise IndexError("low must be at least the size of individual: %d < %d" % (len(low), size))
+    if not isinstance(high, Sequence):
+        sigma = repeat(high, size)
+    elif len(high) < size:
+        raise IndexError("high must be at least the size of individual: %d < %d" % (len(high), size))
+
+    for i, l, h in zip(range(size), low, high):
+        if np.random.random() < indpb:
+            individual[i] += np.random.uniform(l, h)
+
+    return individual,
+
 
 # DEAP Algorithm.
-def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob = 0.05, tmntsize = 3, v = 1):
-    '''
+def initiate_DEAP(fitness_func, params, generange=(0, 1), indsize=18, mutprob=0.05, tmntsize=3, v=1):
+    """
     Registers the different classes and methods required to run the DEAP genetic algorithm. Basic characteristics of the problem need to be passed:
 
     fitness_func:   The name of the fitness function 
@@ -23,31 +59,35 @@ def initiate_DEAP(fitness_func, params, generange = (0,1), indsize = 18, mutprob
     v:              Version of the GA used. v = 1 works for single output fit funcs. v = 2 works for 3-uple output fit funcs.
 
     One has to make sure that the initiate_DEAP functions is called before the if __name__ == '__main__'. The toolbox has to be registered before that (global scope)
-    '''
+    """
     if v == 1:
-        creator.create('FitnessMax', base.Fitness, weights = (1.0,)) # If wanted to minimize, weight negative
+        creator.create('FitnessMax', base.Fitness, weights=(1.0,))  # If wanted to minimize, weight negative
     elif v == 2:
-        creator.create('FitnessMax', base.Fitness, weights = (1.0, 1.0, 1.0))
-    creator.create('Individual', list, fitness = creator.FitnessMax)
+        creator.create('FitnessMax', base.Fitness, weights=(1.0, 1.0, 1.0))
+    else:
+        print('Select a valid v (v = 1, 2)')
+    creator.create('Individual', list, fitness=creator.FitnessMax)
     toolbox = base.Toolbox()
     # How we generate the genes of each individual:
     toolbox.register('genes', np.random.uniform, generange[0], generange[1])
     toolbox.register('individual', tools.initRepeat, creator.Individual, toolbox.genes, indsize)
     toolbox.register('population', tools.initRepeat, list, toolbox.individual)
 
-    toolbox.register('evaluate', fitness_func, params) # The evaluation will be performed calling the alias evaluate. It is important to not fix its argument here. 
+    toolbox.register('evaluate', fitness_func, params)  # The evaluation will be performed calling the alias evaluate. It is important to not fix its argument here.
     toolbox.register('mate', tools.cxTwoPoint)
-    toolbox.register('mutate', tools.mutGaussian, 
-                     mu=(generange[1] - generange[0])/2, 
-                     sigma=(generange[1] - generange[0])/20, indpb=mutprob)  # Real number only mutation. Let's see how it works
-    #toolbox.register('select', tools.selTournament, tournsize=tmntsize)
-    # Me acabo de enterar que tournament no hace seleccion de multiples variables
-    toolbox.register('select', tools.selNSGA2)
+    toolbox.register('mutate', mutUniform,
+                     low=generange[0],
+                     high=generange[1], indpb=mutprob)
+    if v == 1:
+        toolbox.register('select', tools.selTournament, tournsize=tmntsize)
+    # Since tournament does not make multivariate selection, NSGA shall be used for more than one fitness values.
+    elif v == 2:
+        toolbox.register('select', tools.selNSGA2)
     return toolbox, creator
 
 
 def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, creator, parallel, pool = None, v = 2):
-    '''
+    """
     Runs the DEAP Genetic Algorithm. Main characteristics of the algorithm need to be passed now:
 
     num_generations: Number of generations that the GA will run
@@ -68,7 +108,7 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
     avgfits:    A list containing the average fitness in each generation
 
     If we are using parallel processing, the with Pool as pool has to be called inside if __name__=='__main__'
-    '''
+    """
     if parallel:
         
         toolbox.register('map', pool.map)
@@ -174,12 +214,14 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
     elif v == 2:
         maxfits = np.zeros((num_generations, 3))
     avgfits = []
-    overall_fit = [] # This is the array that we will use to determine if there is extinction
+    overall_fit = []  # This is the array that we will use to determine if there is extinction
     gens_passed_after_ext = 0
     bestsols = np.zeros((num_generations, indsize))
-    pop = toolbox.population(n = popsize) # pop will be a list of popsize individuals
+    pop = toolbox.population(n=popsize)  # pop will be a list of popsize individuals
     
-    # We now substitute one of the population with the OP individual
+    # The cheatlist is the first individual of all, passed through the main script.
+    # We can choose an initial individual that we know that will work to start the population,
+    # make it converge faster.
     pop[0] = creator.Individual(cheatlist)
 
     fitnesses = list(toolbox.map(toolbox.evaluate, pop))
