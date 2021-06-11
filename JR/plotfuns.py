@@ -325,11 +325,11 @@ def plotcouplings3x3(solution):
     alphas = np.reshape(solution[0:9], (3, 3)).T
     betas = np.reshape(np.flip(solution[9:]), (3, 3)).T
     ax = axes[0]
-    ax.imshow(alphas, vmin = minim, vmax = maxim)
+    ax.imshow(alphas, vmin=minim, vmax=maxim)
     ax.set_title('Excitatory Coupling Coefficients')
     ax.set_xlabel('Layers')
     ax = axes[1]
-    im = ax.imshow(betas, vmin = minim, vmax = maxim)
+    im = ax.imshow(betas, vmin=minim, vmax=maxim)
     ax.set_title('Inhibitory Coupling Coefficients')
     ax.set_xlabel('Layers')
     fig.subplots_adjust(right=0.8)
@@ -370,9 +370,9 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
     return fig
 
 
-def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_generations = [], v = 1):
-    '''Returns the plot of the highest and average fitnesses per generation. Additionally 
-    indicates extinctions and the best individual's fitnesses'''
+def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_generations=(), v=1):
+    """Returns the plot of the highest and average fitnesses per generation. Additionally
+    indicates extinctions and the best individual's fitnesses"""
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
 
     gens = np.arange(0, num_generations)
@@ -389,21 +389,18 @@ def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_g
     else:
         print("Select proper v. Corresponding to the GA's v.")
 
-    for extinction in extinction_generations: ax.axvline(extinction, c='k')
+    for extinction in extinction_generations:
+        ax.axvline(extinction, c='k')
     ax.plot([], [], 'k', label='Extinction in the generation')
-    ax.set_title('Evolution of fitness')
-    ax.set_xlabel('Generations')
-    ax.set_ylabel('Fitness')
+    ax.set(title='Evolution of fitness', xlabel='Generation', ylabel='Fitness', ylim=(-3, 3))
     ax.legend()
-    #ax.legend(bbox_to_anchor=(1.04,1), borderaxespad=0) # Yo creo que no hace falta tenerlo fuera
+    # ax.legend(bbox_to_anchor=(1.04,1), borderaxespad=0) # Yo creo que no hace falta tenerlo fuera
     plt.tight_layout()
     return fig
 
 
 def plot_bestind_normevol(bestsols, num_generations, params):
-    # MODIFY THIS FUNCTION TO SHOW THE DIFFERENCES BETWEEN EXCITATORY AND INHI
-    # BITORY NORMS!!! 
-    ''' Returns the evolution of the norm of the best individual in each generation.'''
+    """Returns the evolution of the norm of the best individual in each generation."""
     fig, ax = plt.subplots(1,1)
     len_exc = np.count_nonzero(params['matrix_exc'])
     gens = np.arange(0, num_generations)
@@ -421,18 +418,18 @@ def plot_bestind_normevol(bestsols, num_generations, params):
 
 
 def plot_sigsingleJR(t, y, signal):
-    '''Returns the dynamics of the signal and a single JR column in the same
-    plot. y and signal should have equivalent sizes.'''
+    """Returns the dynamics of the signal and a single JR column in the same
+    plot. y and signal should have equivalent sizes."""
     xspan = (t[-10000], t[-1])
-    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(18,9))
+    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(18, 9))
     for ii in range(signal.shape[0]):
         ax = axes[ii, 0]
-        ax.plot(t, signal[ii,:], 'k')
+        ax.plot(t, signal[ii, :], 'k')
         ax.set(xlabel='s', ylabel='Hz', title='Input signal', xlim=xspan,
                ylim=(70, 200))
-    for ii in range(y.shape[0]): # y is output as a column vector, fuck 1d
+    for ii in range(y.shape[0]):  # y is output as a column vector, fuck 1d
         ax = axes[ii, 1]
-        ax.plot(t, y[ii,:], 'r')
+        ax.plot(t, y[ii, :], 'r')
         ax.set(xlabel='s', ylabel='mV', title='JR dynamics', xlim=xspan,
                ylim=(-8, 20))
     plt.tight_layout()
@@ -480,10 +477,23 @@ def plot_corrs(y, idx, params, newfolder):
     fig, ax = plt.subplots(1, 1)
     im = ax.imshow(corr_array, vmin=0, vmax=1)
     ticks = np.linspace(0, nnodes-1, nnodes)
-    ax.set(xticks=ticks, xticklabels=tickslab, yticks=ticks, yticklabels=tickslab,
-           title='Cross-correlations between nodes. (%i, %i) set' % pair)
     fig.colorbar(im)
-    fig.savefig(newfolder + '/corrs' + str(idx) + '.png')
+    if len(pair) == 2:
+        ax.set(xticks=ticks, xticklabels=tickslab, yticks=ticks, yticklabels=tickslab,
+               title='Cross-correlations between nodes. (%i, %i) set' % pair)
+        fig.savefig(newfolder + '/corrs' + str(idx) + '.png')
+
+    elif len(pair) == 1:
+        ax.set(xticks=ticks, xticklabels=tickslab, yticks=ticks, yticklabels=tickslab,
+               title='Cross-correlations. Uncorrelated input nodes')
+        fig.savefig(newfolder + '/corrsnone.png')
+
+    elif len(pair) == 3:
+        ax.set(xticks=ticks, xticklabels=tickslab, yticks=ticks, yticklabels=tickslab,
+               title='Cross-correlations. All input nodes correlated')
+        fig.savefig(newfolder + '/corrsall.png')
+    else:
+        print('Error in pair dimensions')
 
     return fig
 

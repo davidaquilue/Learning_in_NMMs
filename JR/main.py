@@ -30,8 +30,9 @@ params['f'] = 0
 
 # NETWORK ARCHITECTURE PARAMETERS
 params['tuplenetwork'] = (3, 6, 3)
-params['recurrent'] = False
+params['recurrent'] = True
 params['forcednodes'] = (0, 1, 2)
+params['shift'] = True
 
 Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v=0)
 # (see the function in the matfuns script for further information on the tests)
@@ -41,7 +42,7 @@ params['Nnodes'] = Nnodes
 params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
 params['tstep'] = 0.001
-params['tspan'] = (0, 2000)
+params['tspan'] = (0, 500)
 
 # INPUT SIGNALS: TRAINING AND TESTING SETS
 params['t'] = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
@@ -56,18 +57,18 @@ params['unsync'] = (0, 1, 2)    # Unsynchronized nodes, have to align with the c
 params['n'] = 1                 # Amount of elements in the training set, depending on the tspan more or less
 params['offset'] = 10           # Baseline of the input vector
 params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
-                                        params['pairs'], params['t'], offset=params['offset'])
+                                        params['pairs'], params['t'], offset=params['offset'], shift=params['shift'])
 
 # Test test dataset will be set up in the plotting results file
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
-params['num_generations'] = num_generations = 300
-params['popsize'] = popsize = 260           # Population size
+params['num_generations'] = num_generations = 200
+params['popsize'] = popsize = 220           # Population size
 params['mutindprob'] = mutindprob = 0.25    # Probability that an individual undergoes mutation
 params['coprob'] = coprob = 0.7             # Crossover probability
 params['maxvalue'] = maxgene = 0.1*C        # Maximum coupling value of a connection
 params['minvalue'] = mingene = 0            # Minimum coupling value of a connection
-par_processes = 30                          # How many cores will be used in order to parallelize the GA.
+par_processes = 36                          # How many cores will be used in order to parallelize the GA.
 params['L'] = L = 40                        # After how many non-improving generations exctinction occurs
 
 

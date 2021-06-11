@@ -89,7 +89,7 @@ def build_p_inputs(inputnodes, t, offset, corrnodes, ampnoise=2):
     return p_inputs
 
 
-def build_p_inputs_shifted(inputnodes, t, offset, corrnodes, tshift, amp=110, ampnoise=2):
+def build_p_inputs_shifted(inputnodes, t, offset, corrnodes, tshift, amp=140, ampnoise=2):
     """ Adds a time shift to the input vectors. tshift in seconds """
     idx_shift = int(tshift/(t[1]-t[0]))
     p_inputs = np.zeros((inputnodes, t.size))
@@ -103,7 +103,7 @@ def build_p_inputs_shifted(inputnodes, t, offset, corrnodes, tshift, amp=110, am
     return p_inputs
 
 
-def build_dataset(n, inputnodes, corrpairs, t, offset=0, shift=False, tshift=5):
+def build_dataset(n, inputnodes, corrpairs, t, offset=0, shift=False, tshift=4):
     """Returns a list containing the different sets of inputs for each
     pair of correlated input signals. That is, a len(corrpairs) list where
     each element is an (n, inputnodes, t.size) array, containing n different
