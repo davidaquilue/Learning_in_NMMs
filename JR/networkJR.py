@@ -436,10 +436,10 @@ def obtaindynamicsNET(params, tspan, tstep, v):
     elif v == 2:
         funparams = unpackingNET_V2(params)
         x1,t1 = HeunNET(x0, tspan, tstep, derivativesNET_V2, funparams)
-    elif v == 3 and params['recurrent'] == False:
+    elif v == 3 and not params['recurrent']:
         funparams = unpackingNET_V3(params)
         x1, t1 = HeunNET(x0, tspan, tstep, derivativesNET_V3, funparams)
-    elif v == 3 and params['recurrent'] == True:
+    elif v == 3 and params['recurrent']:
         funparams = unpackingNET_V4(params)
         delaysteps = params['delaysteps']
         x1, t1 = HeunNET_V4(x0, tspan, tstep, derivativesNET_V4, funparams, delaysteps)

@@ -48,7 +48,7 @@ params['signals'] = build_p_inputs_shifted(params['tuplenetwork'][0], params['t'
 #fig, ax = plt.subplots(1, 1)
 #draw_neural_net(ax, 0.05, 0.95, 0.05, 0.95, params['tuplenetwork'], weights_exc, params['maxvalue'])
 y, t = obtaindynamicsNET(params, (0, 200), 0.001, 3)
-plot_363(y, t, 'small', params, True, params['signals'])
+plot_363(y, t, 'large', params, True, params['signals'])
 plt.show()
 """
 bestsols = np.load('best_sols.npy')
