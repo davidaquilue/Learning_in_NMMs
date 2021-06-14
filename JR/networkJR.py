@@ -259,6 +259,83 @@ def derivativesNET_V3(inp, t, paramtup, n):
     return dz
 
 
+# VERSION 4. ALL CONNECTIONS HAVE A CERTAIN DELAY, FOR RECURRENCE IN GA WIHT TIMESHIFTED INPUTS.
+# It would be interesting for the GA to also determine the amount of delay that it will apply. 
+def unpackingNET_V4(params):
+    """Returns the values of the parameters in the dictionary params in a tuple so that we can work with numba"""
+    A, B, v0, a, b, e0, pbar = params['A'],params['B'],params['v0'],params['a'], params['b'], params['e0'], params['pbar']
+    C1, C2 = params['C1'], params['C2']
+    C3, C4, r = params['C3'], params['C4'], params['r']  # JR Model Params
+
+    # Network architecture params
+    Nnodes = params['Nnodes'] # Total number of nodes
+    tuplenetwork = params['tuplenetwork'] # A tuple containing the architecture of the network, in our case: (3,3,3)
+    forcednodes = params['forcednodes'] # A tuple containing the indexes of the input layer, in our case: (0,1,2)
+    individual = params['individual']   # Vector containing the values of the coupling values, through the following line it is converted to two weight matrices.
+    weights_exc, weights_inh = individual_to_weights(individual, params['matrix_exc'], params['matrix_inh']) # Connectivity matrices, if matrix[i,j] = 0 nodes i,j are 
+    # not connected, if matrix[i,j] means that node j sends an input to node i.
+
+    delaysteps = params['delaysteps']
+
+    # Signals, that will be built outside the dynamics functions and will have to be the same length as will be the resulting vectors.
+    signals = params['signals']# shape of (nodesfirstlayer, nsteps)
+
+    return A, B, v0, a, b, e0 , pbar, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednodes, signals, delaysteps
+
+
+@njit(fastmath=usefastmath)
+def derivativesNET_V4(inp, t, paramtup, n, inpdelay):
+    """ Returns derivatives of the 6 variables of the model for each node
+    Inputs:
+    inp:    A (N_nodes,6) matrix
+    t:      step of time for which the values are those of inp. t = tvec[n]
+    n:      Step of the iteration
+    inp:    A (N_nodes, 6) matrix of delaysteps timesteps before.
+    Output:
+    dz:     A (N_nodes,6) matrix, containing all the derivatives of the variables.
+    """
+    A, B, v0, a, b, e0, pbar, C1, C2, C3, C4, r, weights_exc, weights_inh, Nnodes, tuplenetwork, forcednodes, signals, delaysteps = paramtup
+    # Now the input will be a 3D matrix where for inp[]each row i corresponds to the variables (z0,y0,z1,y1,z2,y2) of each node i.
+    dz = np.zeros_like(inp)
+    # Now we obtain the derivatives of every variable for every node.
+    for nn in range(Nnodes):
+        x = inp[nn]  # This will extract the row corresponding to each node.
+        z0 = x[0]
+        y0 = x[1]
+        z1 = x[2]
+        y1 = x[3]
+        z2 = x[4]
+        y2 = x[5]
+        pbar = np.random.uniform(120, 240)
+        # Coupled intensities, we obtain them from a function.
+        pa, pb = couplingval_V4(inpdelay, weights_exc[nn], weights_inh[nn], C3, e0, r, v0, nn, tuplenetwork, Nnodes)
+
+        if nn in forcednodes:
+            pbar = signals[nn, n]
+        # Derivatives of each variable.
+        dz0 = A*a*S(y1-y2, e0, r, v0) - 2*a*z0 - a**2*y0
+        dy0 = z0
+        dz1 = A*a*(pbar + C2*S(C1*y0, e0, r, v0) + pa) - a**2*y1 - 2*a*z1
+        dy1 = z1
+        dz2 = B*b*(C4*S(C3*y0, e0, r, v0) + pb) - 2*b*z2 - b**2*y2
+        dy2 = z2
+        dz[nn] = np.array([dz0, dy0, dz1, dy1, dz2, dy2])
+    return dz
+
+@njit(fastmath=usefastmath)
+def couplingval_V4(inp, row_weights_exc, row_weights_inh, C3, e0, r, v0, nn, tuplenetwork, Nnodes):
+    """Obtains the effects of the coupling for each node. One excitatory/inhibitory value constant per cortical column.
+    Main approach used in the first computations of the Genetic Algorithm"""
+    pa = 0
+    pb = 0
+    # We obtain the contribution of each node.
+    for node, (value_ex, value_inh) in enumerate(zip(row_weights_exc, row_weights_inh)):
+        if value_ex != 0:  # by this we have acces to the nodes to which the current node is linked to
+            pa = pa + value_ex*S(inp[node, 3]-inp[node, 5], e0, r, v0)
+        if value_inh != 0:
+            pb = pb + value_inh*S(C3*inp[node, 1], e0, r, v0)
+    return pa, pb
+
 # OBTAINING DYNAMICS FUNCTIONS
 @njit(fastmath = usefastmath)
 def HeunNET(x0, tspan, tstep, fun, funparams):
@@ -294,6 +371,47 @@ def HeunNET(x0, tspan, tstep, fun, funparams):
         
     return x, tvec
 
+
+@njit(fastmath = usefastmath)
+def HeunNET_V4(x0, tspan, tstep, fun, funparams, delaysteps):
+    '''
+    Heun method of integrating equations, this time without noise simulation. 
+    Inputs:
+    x0:         Matrix of initial conditions. (N,6)
+    tspan:      Tuple: (t0, tf).
+    tstep:      Timestep taken.
+    fun:        Function f from dy/dt = f(t,y).
+    funparams:  Parameters that the function f needs.
+    '''
+    t0 = tspan[0]
+    tf = tspan[1]
+    
+    nsteps = int((tf-t0)/tstep) # Number of total steps that will be taken.
+    
+    tvec = np.linspace(t0,tf,nsteps)
+    nnodes = x0.shape[0]
+    nvars = x0.shape[1]
+    x = np.zeros((nnodes,nsteps,nvars)) # Matrix of outputs, now it's 3D
+    x[:,0,:] = x0
+    # Loop. Main algorithm of the Heun Method.
+    for n in range(nsteps-1):
+        t1 = tvec[n]
+        if n <= delaysteps:
+            inpdelay = x[:, 0, :]
+        else:
+            inpdelay = x[:, n-delaysteps, :]
+
+        f1 = fun(x[:,n,:], t1, funparams, n, inpdelay)
+        
+        aux = x[:,n,:] + tstep*f1
+        
+        t2 = tvec[n+1]
+        f2 = fun(aux, t2, funparams, n, inpdelay)
+        x[:,n+1,:] = x[:,n,:] + 0.5*tstep*(f1 + f2)
+        
+    return x, tvec
+
+
 def obtaindynamicsNET(params, tspan, tstep, v):
     ''' 
     Returns the evolution over time of the PSP of the pyramidal population.
@@ -318,9 +436,14 @@ def obtaindynamicsNET(params, tspan, tstep, v):
     elif v == 2:
         funparams = unpackingNET_V2(params)
         x1,t1 = HeunNET(x0, tspan, tstep, derivativesNET_V2, funparams)
-    elif v == 3:
+    elif v == 3 and params['recurrent'] == False:
         funparams = unpackingNET_V3(params)
         x1, t1 = HeunNET(x0, tspan, tstep, derivativesNET_V3, funparams)
+    elif v == 3 and params['recurrent'] == True:
+        funparams = unpackingNET_V4(params)
+        delaysteps = params['delaysteps']
+        x1, t1 = HeunNET_V4(x0, tspan, tstep, derivativesNET_V4, funparams, delaysteps)
+
     else:
         print('No version has been selected. Dynamics not obtained.')
 

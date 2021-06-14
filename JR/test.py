@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib
 import os
 import matplotlib.pyplot as plt
-from signals import build_p_inputs
+from signals import build_p_inputs_shifted
 from matfuns import fastcrosscorrelation as ccross, findlayer, psd, networkmatrix_exc_inh
 from networkJR import obtaindynamicsNET, individual_to_weights
 from plotfuns import plotcouplings, plot_corrs, plot_363, plotcouplings3x3V2, draw_neural_net
@@ -29,6 +29,7 @@ params['f'] = 0
 # NETWORK ARCHITECTURE PARAMETERS
 params['tuplenetwork'] = (3, 6, 3)
 params['recurrent'] = True
+params['delaysteps'] = 100
 params['forcednodes'] = (0, 1, 2)
 
 Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v=0)
@@ -38,11 +39,16 @@ params['matrix_exc'] = matrix_exc
 params['matrix_inh'] = matrix_inh
 indivsize = np.count_nonzero(matrix_exc)
 params['maxvalue'] = maxval = 0.2*C
-random_ind = maxval*np.random.random(2*indivsize)
+params['individual'] = random_ind = maxval*np.random.random(2*indivsize)
 weights_exc, weights_inh = individual_to_weights(random_ind, matrix_exc, matrix_inh)
+params['t'] = np.arange(0, 200, 0.001)
 
-fig, ax = plt.subplots(1, 1)
-draw_neural_net(ax, 0.05, 0.95, 0.05, 0.95, params['tuplenetwork'], weights_exc, params['maxvalue'])
+params['signals'] = build_p_inputs_shifted(params['tuplenetwork'][0], params['t'], 10, (1,2), 5)
+
+#fig, ax = plt.subplots(1, 1)
+#draw_neural_net(ax, 0.05, 0.95, 0.05, 0.95, params['tuplenetwork'], weights_exc, params['maxvalue'])
+y, t = obtaindynamicsNET(params, (0, 200), 0.001, 3)
+plot_363(y, t, 'small', params, True, params['signals'])
 plt.show()
 """
 bestsols = np.load('best_sols.npy')
