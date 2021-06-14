@@ -4,16 +4,17 @@ fail occured after the GA"""
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from networkJR import obtaindynamicsNET
+from matplotlib import cm
+import matplotlib.animation as animation
+from networkJR import obtaindynamicsNET, individual_to_weights
 from galgs import test_solution
 from signals import build_dataset, build_p_inputs
 from filefuns import check_create_results_folder, get_num
 from plotfuns import plot_inputs, plotcouplings, plot_genfit, plot_bestind_normevol, plot_corrs, plot_363
-
 typical_recover = True
 all_nodes = True
-no_nodes = True
-visualize_best = False
+no_nodes = False
+visualize_best = True
 
 # The folder that will be used to run this script will always be the last one in the Results folder.
 print('Ignore the following printed line:')
@@ -101,17 +102,68 @@ if no_nodes:
     fig_none = plot_363(y, t, 'small', params, True, params['signals'])
     fig_none.savefig(newfolder + '/Dynamics_none.png')
 
+
+# Visualization of parameters, very poorly written...
+def createplot(sol, maxval):
+    matrix_exc = params['matrix_exc']
+    matrix_inh = params['matrix_inh']
+    bandw = True
+    minmaxvals = (params['minvalue'], params['maxvalue'])
+    if maxval > minmaxvals[1]:
+        minmaxvals = (minmaxvals[0], maxval)
+    weights_exc, weights_inh = individual_to_weights(sol, matrix_exc, matrix_inh)
+    weights_exc = np.ma.masked_where(weights_exc == 0, weights_exc)
+    weights_inh = np.ma.masked_where(weights_inh == 0, weights_inh)
+    nnodes = matrix_exc.shape[0]
+    ticks = np.linspace(0, nnodes - 1, nnodes)
+    if bandw:
+        colormap = cm.get_cmap('Greys')
+    else:
+        colormap = cm.get_cmap('viridis')
+
+    fig, axes = plt.subplots(1, 2, figsize=(9, 6))
+    im1 = axes[0].imshow(weights_exc, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
+    axes[0].set(title='Connectivity matrix $E$', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node')
+    axes[0].set(title='Connectivity matrix $E$', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
+             xticks=ticks, yticks=ticks)
+    axes[0].set_xticks(np.arange(-.5, params['Nnodes']-1, 1), minor=True)
+    axes[0].set_yticks(np.arange(-.5, params['Nnodes']-1, 1), minor=True)
+    axes[0].grid(which='minor', color='k')
+
+    im2 = axes[1].imshow(weights_inh, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
+    axes[1].set(title='Connectivity matrix $I$', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
+                xticks=ticks, yticks=ticks)
+    axes[1].set_xticks(np.arange(-.5, params['Nnodes'] - 1, 1), minor=True)
+    axes[1].set_yticks(np.arange(-.5, params['Nnodes'] - 1, 1), minor=True)
+    axes[1].grid(which='minor', color='k')
+    fig.subplots_adjust(right=0.8)
+    cbar_ax = fig.add_axes([0.85, 0.15, 0.03, 0.7])
+    fig.colorbar(im2, cax=cbar_ax)
+    title = fig.suptitle('Generation %i' % 0 + '. Avg Fitness: %d' % maxfits_avg[0], fontsize=20)
+    return fig, [im1, im2, title]
+
+
+def update_weights(g):
+    solution = bestsols[g]
+    matrix_exc = params['matrix_exc']
+    matrix_inh = params['matrix_inh']
+    minmaxvals = (params['minvalue'], params['maxvalue'])
+    weights_exc, weights_inh = individual_to_weights(solution, matrix_exc, matrix_inh)
+    imgs[0].set_data(weights_exc)
+    str = 'Generation %i' % g + '. Fitness: %f' % maxfits_avg[g]
+    imgs[1].set_data(weights_inh)
+    imgs[2].set_text(str)
+    return imgs
+
+maxval = np.amax(bestsols)
 if visualize_best:
-    # A lo mejor se podria hacer una animación más currada, o un análisis más matemático o así.
-    ii = 1
-    for gg, bestsol in enumerate(bestsols):
-        if maxfits_avg[gg] > 2.75:
-            fig_couplings = plotcouplings(bestsol, params['matrix_exc'], params['matrix_inh'],
-                                          (params['minvalue'], params['maxvalue']), params, True)
-            ii += 1
-            if ii >= 20:
-                plt.show()
-                ii = 1
+    fig, imgs = createplot(bestsols[0], maxval)
+    frames = np.arange(100, bestsols.shape[0], 1)
+    ani = animation.FuncAnimation(fig, update_weights, frames=frames, interval=75, repeat_delay=5000)
+    Writer = animation.writers['ffmpeg']
+    writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
+    ani.save(newfolder + '/bestsolsev.mp4', writer=writer)
+    #plt.show()
 
 
 # See how it goes with everything the same but only with two different regimes (node and alpha) nyeh complicat

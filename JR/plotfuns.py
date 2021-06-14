@@ -623,3 +623,4 @@ def plotcouplings(solution, matrix_exc, matrix_inh, minmaxvals, params, bandw=Fa
     ax.axis('off')
     ax.set(title='Inhibitory network diagram')
     return fig
+

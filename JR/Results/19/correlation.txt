@@ -1,0 +1,48 @@
+Sample 0 from set 0:
+Nodes 10 and 11 should be correlated: 
+Signals      Corrs  First Layer      Corrs  Last layer         Corrs
+---------  -------  -------------  -------  ---------------  -------
+p1 and p2   0.4879  nodes 1 and 2   0.3859  nodes 10 and 11   0.9939
+p0 and p2   0.0916  nodes 0 and 2   0.0921  nodes 9 and 11    0.9944
+p0 and p1   0.0125  nodes 0 and 1   0.0100  nodes 9 and 10    0.9917
+ 
+Sample 1 from set 0:
+Nodes 10 and 11 should be correlated: 
+Signals      Corrs  First Layer      Corrs  Last layer         Corrs
+---------  -------  -------------  -------  ---------------  -------
+p1 and p2   0.3596  nodes 1 and 2   0.2769  nodes 10 and 11   0.9927
+p0 and p2   0.0484  nodes 0 and 2   0.0372  nodes 9 and 11    0.9932
+p0 and p1   0.1087  nodes 0 and 1   0.0909  nodes 9 and 10    0.9898
+ 
+Sample 0 from set 1:
+Nodes 9 and 11 should be correlated: 
+Signals      Corrs  First Layer      Corrs  Last layer         Corrs
+---------  -------  -------------  -------  ---------------  -------
+p1 and p2   0.1545  nodes 1 and 2   0.1255  nodes 10 and 11   0.9941
+p0 and p2   0.4025  nodes 0 and 2   0.4101  nodes 9 and 11    0.9951
+p0 and p1   0.0363  nodes 0 and 1   0.0149  nodes 9 and 10    0.9924
+ 
+Sample 1 from set 1:
+Nodes 9 and 11 should be correlated: 
+Signals      Corrs  First Layer      Corrs  Last layer         Corrs
+---------  -------  -------------  -------  ---------------  -------
+p1 and p2   0.0169  nodes 1 and 2   0.0142  nodes 10 and 11   0.9939
+p0 and p2   0.3983  nodes 0 and 2   0.3943  nodes 9 and 11    0.9943
+p0 and p1   0.0715  nodes 0 and 1   0.0668  nodes 9 and 10    0.9915
+ 
+Sample 0 from set 2:
+Nodes 9 and 10 should be correlated: 
+Signals      Corrs  First Layer      Corrs  Last layer         Corrs
+---------  -------  -------------  -------  ---------------  -------
+p1 and p2   0.0466  nodes 1 and 2   0.0363  nodes 10 and 11   0.9940
+p0 and p2   0.0154  nodes 0 and 2   0.0150  nodes 9 and 11    0.9943
+p0 and p1   0.3293  nodes 0 and 1   0.2607  nodes 9 and 10    0.9911
+ 
+Sample 1 from set 2:
+Nodes 9 and 10 should be correlated: 
+Signals      Corrs  First Layer      Corrs  Last layer         Corrs
+---------  -------  -------------  -------  ---------------  -------
+p1 and p2   0.0775  nodes 1 and 2   0.0594  nodes 10 and 11   0.9942
+p0 and p2   0.0727  nodes 0 and 2   0.0848  nodes 9 and 11    0.9951
+p0 and p1   0.4588  nodes 0 and 1   0.3856  nodes 9 and 10    0.9923
+ 
