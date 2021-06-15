@@ -480,7 +480,7 @@ def plot_corrs(y, idx, params, newfolder):
     fig.colorbar(im)
     if len(pair) == 2:
         ax.set(xticks=ticks, xticklabels=tickslab, yticks=ticks, yticklabels=tickslab,
-               title='Cross-correlations between nodes. (%i, %i) set' % pair)
+               title='Cross-correlations between nodes. $S_{%i%i}$' % pair)
         fig.savefig(newfolder + '/corrs' + str(idx) + '.png')
 
     elif len(pair) == 1:
