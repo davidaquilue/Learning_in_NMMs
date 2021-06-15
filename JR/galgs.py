@@ -31,11 +31,11 @@ def mutUniform(individual, low, high, indpb):
     """
     size = len(individual)
     if not isinstance(low, Sequence):
-        mu = repeat(low, size)
+        low = repeat(low, size)
     elif len(low) < size:
         raise IndexError("low must be at least the size of individual: %d < %d" % (len(low), size))
     if not isinstance(high, Sequence):
-        sigma = repeat(high, size)
+        high = repeat(high, size)
     elif len(high) < size:
         raise IndexError("high must be at least the size of individual: %d < %d" % (len(high), size))
 
