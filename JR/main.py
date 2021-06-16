@@ -63,14 +63,14 @@ params['train_dataset'] = build_dataset(params['n'], params['tuplenetwork'][0],
 # Test test dataset will be set up in the plotting results file
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
-params['num_generations'] = num_generations = 200
-params['popsize'] = popsize = 240           # Population size
+params['num_generations'] = num_generations = 550
+params['popsize'] = popsize = 160           # Population size
 params['mutindprob'] = mutindprob = 0.25    # Probability that an individual undergoes mutation
 params['coprob'] = coprob = 0.7             # Crossover probability
 params['maxvalue'] = maxgene = 0.1*C        # Maximum coupling value of a connection
 params['minvalue'] = mingene = 0            # Minimum coupling value of a connection
 par_processes = 38                          # How many cores will be used in order to parallelize the GA.
-params['L'] = L = 40                        # After how many non-improving generations exctinction occurs
+params['L'] = L = 50                        # After how many non-improving generations exctinction occurs
 params['bestmin'] = bestmin = True         # Best individuals are those whose worst fitness value is higher than
 # the worst of their peers.
 

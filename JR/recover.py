@@ -96,6 +96,7 @@ if __name__ == '__main__':
     all_nodes = int(input('All nodes correlated: '))
     no_nodes = int(input('No nodes correlated: '))
     visualize_best = int(input('Evolution video of bestsols: '))
+    printparams = int(input('Print params: '))
 
     # Now we want to determine if the folder contains old (before GA graph improvement) or new results:
     new = os.path.isfile(newfolder + '/params.npy')
@@ -106,6 +107,15 @@ if __name__ == '__main__':
         ext_gens = np.load(newfolder + '/extgens.npy')
         bestsols = np.load(newfolder + '/bestsols.npy')
         params = np.load(newfolder + '/params.npy', allow_pickle=True).item()
+        try:
+            check = params['bestmin']
+        except:
+            params['bestmin'] = False
+
+        try:
+            check = params['shift']
+        except:
+            params['shift'] = 0
         maxfits_avg = np.mean(maxfits, axis=1)  # Average of 3 fitvalues of best individual/generation
         # Choosing the optimal individual resulting from the realization of the algorithm
         if params['bestmin']:
@@ -115,14 +125,18 @@ if __name__ == '__main__':
             best_indivs_gen = np.argmax(maxfits_avg)  # Generation of the optimal individual
         solution = bestsols[best_indivs_gen]  # Optimal individual
         solution = np.array(solution)
+        if printparams:
+            print(params)
 
     else:
         from main import params
         solution = np.load(newfolder + '/best_ind.npy')
         bestsols = np.load(newfolder + '/best_sols.npy')
+        if printparams:
+            print('Cannot print params in the old version.')
 
     # Now we rearrange some of the params for faster simulations
-    params['tspan'] = (0, 500)
+    params['tspan'] = (0, 1000)
     params['t'] = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
     params['individual'] = solution
     if typical_recover:
