@@ -13,6 +13,7 @@ from filefuns import check_create_results_folder, get_num
 from plotfuns import plot_inputs, plotcouplings, plot_genfit, plot_bestind_normevol, plot_corrs, plot_363
 import os, sys
 
+
 # The get_num function outputs a print that I don't want to show. With this class and the following line we block it.
 class HiddenPrints:
     def __enter__(self):
@@ -22,6 +23,7 @@ class HiddenPrints:
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout.close()
         sys.stdout = self._original_stdout
+
 
 # Visualization of parameters, very poorly written...
 def createplot(sol, maxval):
@@ -88,7 +90,6 @@ if __name__ == '__main__':
     else:
         newfolder = results_dir + '/' + str(numnow)
 
-
     print('Recovering test %i' % numnow)
     print("\nEnter 1 if you want to perform these tests. 0 if you don't want to.")
     typical_recover = int(input('Typical recover: '))
@@ -105,8 +106,13 @@ if __name__ == '__main__':
         ext_gens = np.load(newfolder + '/extgens.npy')
         bestsols = np.load(newfolder + '/bestsols.npy')
         params = np.load(newfolder + '/params.npy', allow_pickle=True).item()
-        maxfits_avg = np.mean(maxfits, axis=1)  # Mean of the different fitnesses
-        best_indivs_gen = np.argmax(maxfits_avg)  # Generation of the optimal individual
+        maxfits_avg = np.mean(maxfits, axis=1)  # Average of 3 fitvalues of best individual/generation
+        # Choosing the optimal individual resulting from the realization of the algorithm
+        if params['bestmin']:
+            representation = np.amin(maxfits, axis = 1)
+            best_indivs_gen = np.argmax(representation)
+        else:
+            best_indivs_gen = np.argmax(maxfits_avg)  # Generation of the optimal individual
         solution = bestsols[best_indivs_gen]  # Optimal individual
         solution = np.array(solution)
 
@@ -115,41 +121,43 @@ if __name__ == '__main__':
         solution = np.load(newfolder + '/best_ind.npy')
         bestsols = np.load(newfolder + '/best_sols.npy')
 
-
     # Now we rearrange some of the params for faster simulations
     params['tspan'] = (0, 500)
     params['t'] = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
     params['individual'] = solution
     if typical_recover:
-        check = os.path.isfile(newfolder + '/inputs_0.png')
-        if check:
-            print('Typical recover already performed on this results. If want to repeat please delete inputs_0.png\n')
+        if new:
+            check = os.path.isfile(newfolder + '/inputs_0.png')
+            if check:
+                print('Typical recover already performed on this results. If want to repeat please delete inputs_0.png\n')
+            else:
+                params['test_dataset'] = build_dataset(int(2*params['n']),
+                                                    params['tuplenetwork'][0],
+                                                    params['pairs'], params['t'], offset=params['offset'],
+                                                    shift=params['shift'])
+
+                if new:
+                    # Plot the maximum fitnesses and average fitnesses of each generation
+                    fig_genfit = plot_genfit(params['num_generations'], maxfits, avgfits, best_indivs_gen, ext_gens, v=2)
+                    fig_genfit.savefig(newfolder + "/fitness.jpg")
+
+                # Show the coupling matrices corresponding to the best individual of the evolution
+                fig_couplings = plotcouplings(solution, params['matrix_exc'], params['matrix_inh'],
+                                            (params['minvalue'], params['maxvalue']), params, True)
+                fig_couplings.savefig(newfolder + "/bestweights.jpg")
+
+                # Plot the evolution of the norm of the best solution
+                fig_normevol = plot_bestind_normevol(bestsols, bestsols.shape[0], params)
+                fig_normevol.savefig(newfolder + "/normevol.jpg")
+
+                # Finally print the tests results and plot some of the dynamics
+                params['signals'] = params['test_dataset'][0][0]
+                y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
+                modidx = int(params['tspan'][-1] - 10) * 1000
+                plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
+                test_solution(params, newfolder, whatplot='net')
         else:
-            params['test_dataset'] = build_dataset(int(2*params['n']),
-                                                params['tuplenetwork'][0],
-                                                params['pairs'], params['t'], offset=params['offset'],
-                                                shift=params['shift'])
-
-            if new:
-                # Plot the maximum fitnesses and average fitnesses of each generation
-                fig_genfit = plot_genfit(params['num_generations'], maxfits, avgfits, best_indivs_gen, ext_gens, v=2)
-                fig_genfit.savefig(newfolder + "/fitness.jpg")
-
-            # Show the coupling matrices corresponding to the best individual of the evolution
-            fig_couplings = plotcouplings(solution, params['matrix_exc'], params['matrix_inh'],
-                                        (params['minvalue'], params['maxvalue']), params, True)
-            fig_couplings.savefig(newfolder + "/bestweights.jpg")
-
-            # Plot the evolution of the norm of the best solution
-            fig_normevol = plot_bestind_normevol(bestsols, bestsols.shape[0], params)
-            fig_normevol.savefig(newfolder + "/normevol.jpg")
-
-            # Finally print the tests results and plot some of the dynamics
-            params['signals'] = params['test_dataset'][0][0]
-            y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
-            modidx = int(params['tspan'][-1] - 10) * 1000
-            plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
-            test_solution(params, newfolder, whatplot='net')
+            print('Typical recovery cannot be performed.')
 
     # I want to test some other things aswell, on the results obtained.
 

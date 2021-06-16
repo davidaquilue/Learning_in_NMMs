@@ -380,9 +380,9 @@ def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_g
         ax.plot(gens, maxfits, label="Best individual's fitness")
         ax.plot(best_indivs_gen, maxfits[best_indivs_gen], 'r*', label='Optimal individual in algorithm')
     elif v == 2:
-        ax.plot(gens, maxfits[:, 0], label="Best individual's fitness 0")
-        ax.plot(gens, maxfits[:, 1], label="Best individual's fitness 1")
-        ax.plot(gens, maxfits[:, 2], label="Best individual's fitness 2")
+        ax.plot(gens, maxfits[:, 0], label="Best individual's $F_{12}$")
+        ax.plot(gens, maxfits[:, 1], label="Best individual's $F_{02}$")
+        ax.plot(gens, maxfits[:, 2], label="Best individual's $F_{01}$")
         ax.plot(gens, avgfits, label="Average fitness of population")
         ax.plot(best_indivs_gen*np.ones(3), maxfits[best_indivs_gen, :], 'r*',
                 label='Optimal individual in algorithm')
@@ -391,7 +391,7 @@ def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_g
 
     for extinction in extinction_generations:
         ax.axvline(extinction, c='k')
-    ax.plot([], [], 'k', label='Extinction in the generation')
+    ax.plot([], [], 'k', label='Extinction event')
     ax.set(title='Evolution of fitness', xlabel='Generation', ylabel='Fitness', ylim=(-3, 3))
     ax.legend()
     # ax.legend(bbox_to_anchor=(1.04,1), borderaxespad=0) # Yo creo que no hace falta tenerlo fuera

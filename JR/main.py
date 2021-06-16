@@ -30,10 +30,10 @@ params['f'] = 0
 
 # NETWORK ARCHITECTURE PARAMETERS
 params['tuplenetwork'] = (3, 6, 3)
-params['recurrent'] = True
+params['recurrent'] = False
 params['delaysteps'] = 100  # How many time steps of delay in inter-columnar connections. 100*0.001, 0.1s.
 params['forcednodes'] = (0, 1, 2)
-params['shift'] = True
+params['shift'] = False
 
 Nnodes, matrix_exc, matrix_inh = networkmatrix_exc_inh(params['tuplenetwork'], params['recurrent'], v=0)
 # (see the function in the matfuns script for further information on the tests)
@@ -71,7 +71,8 @@ params['maxvalue'] = maxgene = 0.1*C        # Maximum coupling value of a connec
 params['minvalue'] = mingene = 0            # Minimum coupling value of a connection
 par_processes = 38                          # How many cores will be used in order to parallelize the GA.
 params['L'] = L = 40                        # After how many non-improving generations exctinction occurs
-
+params['bestmin'] = bestmin = True         # Best individuals are those whose worst fitness value is higher than
+# the worst of their peers.
 
 # Initialization of the necessary GA functions:
 # this has to go before the if name = main and before running the algorithm.
@@ -92,10 +93,9 @@ if __name__ == '__main__':
     # Run Genetic Algorithm with parallel fitness evaluations of individuals.
     with Pool(processes=par_processes) as piscina:
         # Running GA
-        maxfits, avgfits, bestsols, extgens = galgs.main_DEAP_extinction(num_generations,
-                                                                         popsize, mutindprob,
-                                                                         coprob, indivsize, toolbox,
-                                                                         creator, 1, L, cheatlist, piscina, v=2)
+        maxfits, avgfits, bestsols, extgens = galgs.main_DEAP_extinction(num_generations, popsize, mutindprob,
+                                                                         coprob, indivsize, toolbox, creator, 1,
+                                                                         L, cheatlist, piscina, 2, bestmin)
         # Save the needed variables to later plot
         np.save(newfolder + '/maxfits.npy', maxfits)
         np.save(newfolder + '/avgfits.npy', avgfits)

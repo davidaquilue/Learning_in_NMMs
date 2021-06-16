@@ -180,7 +180,7 @@ def main_DEAP(num_generations, popsize, mutindprob, coprob, indsize, toolbox, cr
 
 def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
                          indsize, toolbox, creator, parallel, L, cheatlist,
-                         pool=None, v=2):
+                         pool=None, v=2, bestmin=False):
     """
     Runs the DEAP Genetic Algorithm. Main characteristics of the algorithm need to be passed now:
 
@@ -195,7 +195,7 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
     L:              Number of generations that have to pass without an increase in the maximal fitness before an extinction
     pool:           The pool of processes in the case that we use parallelization. with Pool(processes = 4) as pool.
     Version of the GA used. v = 1 works for single output fit funcs. v = 2 works for 3-uple output fit funcs.
-
+    bestmin:    If we consider the individual whose worst fitness is larger than any other individual's worst fitness.
 
     Outputs:
     bestsols:   An array containing, in each row, the best individual of each generation
@@ -267,16 +267,25 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
             maxfit = fits[idx]
             maxfits.append(maxfit)
             avgfits.append(np.mean(fits))
-
-        elif v == 2:  # If version 2, three different fitness values are returned
+        # If version 2, three different fitness values are returned
+        elif v == 2:
             fit0 = np.array([ind.fitness.values[0] for ind in pop])
             fit1 = np.array([ind.fitness.values[1] for ind in pop])
             fit2 = np.array([ind.fitness.values[2] for ind in pop])
-            fits = (fit0+fit1+fit2)/3
-            idx = np.argmax(fits)
-            maxfits[i, :] = np.array([fit0[idx], fit1[idx], fit2[idx]])
-            maxfit = fits[idx]
-            avgfits.append(np.mean(fits))
+            indfitmeans = (fit0+fit1+fit2)/3
+            avgfits.append(np.mean(indfitmeans))
+            if bestmin:  # Best individual's worst fitness is higher than any other individual's
+                # worst fitness
+                fits = np.stack([fit0, fit1, fit2])  # 2D array, each row i is the fiti vector
+                representation = np.amin(fits, axis=0)  # Each individual is now represented by its worst fitness value
+                idx = np.argmax(representation)
+                maxfits[i, :] = np.array([fit0[idx], fit1[idx], fit2[idx]])
+                maxfit = representation[idx]
+
+            else:  # if not bestmin, best individual is the one with the largest mean of fitness values.
+                idx = np.argmax(indfitmeans)
+                maxfits[i, :] = np.array([fit0[idx], fit1[idx], fit2[idx]])
+                maxfit = indfitmeans[idx]
 
         overall_fit.append(maxfit)
         bestsols[i, :] = pop[idx]
