@@ -404,13 +404,13 @@ def plot_bestind_normevol(bestsols, num_generations, params):
     fig, ax = plt.subplots(1,1)
     len_exc = np.count_nonzero(params['matrix_exc'])
     gens = np.arange(0, num_generations)
-    norms_exc = np.array([np.sum(weight[0:len_exc]**2) for weight in bestsols])
-    norms_inh = np.array([np.sum(weight[len_exc:]**2) for weight in bestsols])
+    norms_exc = np.array([np.sqrt(np.sum(weight[0:len_exc]**2)) for weight in bestsols])
+    norms_inh = np.array([np.sqrt(np.sum(weight[len_exc:]**2)) for weight in bestsols])
     
-    ax.plot(gens, norms_exc, label='Norm of all excitatory weights')
-    ax.plot(gens, norms_inh, label='Norm of all inhibitory weights')
+    ax.plot(gens, norms_exc, label='$||v_E||$')
+    ax.plot(gens, norms_inh, label='$||v_I||$')
 
-    ax.set_title('Norm of the best individual for each generation')
+    ax.set_title('Norms of the best individual for each generation')
     ax.set_ylabel('Norm')
     ax.set_xlabel('Generations')
     ax.legend(loc='best')
