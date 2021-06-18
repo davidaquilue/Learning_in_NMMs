@@ -10,7 +10,7 @@ from networkJR import obtaindynamicsNET, individual_to_weights
 from galgs import test_solution
 from signals import build_dataset, build_p_inputs
 from filefuns import check_create_results_folder, get_num
-from plotfuns import plot_inputs, plotcouplings, plot_genfit, plot_bestind_normevol, plot_corrs, plot_363
+from plotfuns import plot_inputs, plotcouplings, plot_genfit, plot_bestind_normevol, plot_corrs, plot_363, plotcouplings3x3V2
 import os, sys
 
 
@@ -96,7 +96,10 @@ if __name__ == '__main__':
     all_nodes = int(input('All nodes correlated: '))
     no_nodes = int(input('No nodes correlated: '))
     visualize_best = int(input('Evolution video of bestsols: '))
+    analysebestsols = int(input('Analyse bestsols: '))
     printparams = int(input('Print params: '))
+    showps = int(input('Print p_a and p_b values: '))
+
 
     # Now we want to determine if the folder contains old (before GA graph improvement) or new results:
     new = os.path.isfile(newfolder + '/params.npy')
@@ -213,3 +216,45 @@ if __name__ == '__main__':
             writer = Writer(fps=15, metadata=dict(artist='Me'), bitrate=1800)
             ani.save(newfolder + '/bestsolsev.mp4', writer=writer)
             #plt.show()
+
+    if showps:
+        params['pairs'] = ((0, 1, 2),)
+        params['showpEpI'] = 1
+        params['signals'] = build_p_inputs(3, params['t'], params['offset'], (0, 1))
+        params['individual'] = solution
+        # Testing for gamma C in realistic process
+        #params['individual'] = 0.3*params['C']*np.append(np.ones(int(len(params['individual'])/2)), np.zeros(int(len(params['individual'])/2)))
+        y, t = obtaindynamicsNET(params, tspan=(0, 100), tstep=0.001, v=3)
+        #fig = plot_363(y, t, 'small', params, True, params['signals'])
+        #plt.show()
+
+    if analysebestsols:
+        # Qué cosas queremos analizar?
+        # Function to use: plotcouplings3x3V2(solution, matrix_exc, matrix_inh, minmaxvals, bandw=False)
+        # maxfits.shape = (300, 3)
+        # mean of those with better than 2.5
+        # variance of those with better than 2.5
+
+        # First we store those solutions whose fitness is over a threshold.
+        bb = 0
+        for fits, sol in zip(maxfits, bestsols):
+            if np.amin(fits) > 2.5:
+                if bb == 0:
+                    bestbests = sol
+                    bb += 1
+                else:
+                    bestbests = np.vstack((bestbests, sol))
+
+        # bestbests is a matrix where each row is a solution vector.
+        mean = np.mean(bestsols, axis=0)
+        var = np.var(bestsols, axis=0)
+        figmean = plotcouplings3x3V2(mean, params['matrix_exc'], params['matrix_inh'],
+                                     (np.amin(mean), np.amax(mean)))
+        figvar = plotcouplings3x3V2(var, params['matrix_exc'], params['matrix_inh'],
+                                     (np.amin(var), np.amax(var)))
+        figmean.savefig(newfolder + '/meanweightsover2_5')
+        figvar.savefig(newfolder + '/varweightsover2_5')
+
+        # Bueno mañana pensare alguna cosilla más pero seguramente no se le pueda sacar mucho más
+        # Sin tener en cuenta cosas más complicadas como comparar pesos de diferentes realizaciones
+        # y ver si son compatibles y esas cosas del tema de grafos. No liarla mucho más que ya hay mucho.

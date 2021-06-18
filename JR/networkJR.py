@@ -225,29 +225,16 @@ def derivativesNET_V3(inp, t, paramtup, n):
         y1 = x[3]
         z2 = x[4]
         y2 = x[5]
-        pbar = np.random.uniform(120, 240)
-        """
-        # The following lines of code are just a test to see if it is possible
-        # for one of the layers to oscillate at a different rhythm
-        a = paramtup[3]
-        b = paramtup[4]
-        C1 = paramtup[7]
-        C2 = 0.8*C1
-        C3 = 0.25*C1
-        C4 = 0.25*C1
-        if findlayer(nn, tuplenetwork) == 2:
-            a = 190
-            b = 190
-            C1 = 300
-            C2 = 0.8*C1
-            C3 = 0.25*C1
-            C4 = 0.25*C1
-        """
+        # original process
+        #pbar = np.random.uniform(120, 240)
+        # Realistic process
+        pbar = np.random.normal(95, 5)
         # Coupled intensities, we obtain them from a function.
         pa, pb = couplingval_V2(inp, weights_exc[nn], weights_inh[nn], C3, e0, r, v0, nn, tuplenetwork, Nnodes)
 
         if nn in forcednodes:
-            pbar = signals[nn, n]
+            #pbar = signals[nn, n] #Original process
+            pbar += signals[nn, n] # More realistic process
         # Derivatives of each variable.
         dz0 = A*a*S(y1-y2, e0, r, v0) - 2*a*z0 - a**2*y0
         dy0 = z0
@@ -448,8 +435,14 @@ def obtaindynamicsNET(params, tspan, tstep, v):
         print('No version has been selected. Dynamics not obtained.')
 
     # The output matrix x1 is of the type (Nnodes, timevalues, Nvariables)
-    x, t = x1[:,10000:,:], t1[10000:] # We get values after 10 seconds. Enough to get rid of the transitory
-
+    x, t = x1[:,10000:,:], t1[10000:]  # We ignore first 10 seconds. Enough to get rid of the transitory
     y1 = x[:,:,3]
     y2 = x[:,:,5]
+    out = y1-y2
+    if 'showpEpI' in params:
+        maxpe = np.amax(params['individual'][0:int(len(params['individual'])/2)])*S(np.amax(out),params['e0'], params['r'], params['v0'])
+        maxpi = np.amax(params['individual'][int(len(params['individual'])/2):])*S(params['C3']*np.amax(x[:, :, 1]), params['e0'], params['r'], params['v0'])
+        print('Max possible pE value: ' + str(maxpe))
+        print('Max possible pI value: ' + str(maxpi))
+
     return y1-y2,t

@@ -338,9 +338,13 @@ def plotcouplings3x3(solution):
     return fig
 
 
-def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
+def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, minmaxvals, bandw=False):
     """Returns an imshow of the excitatory and inhibitory weight matrix. solution is the vector of the individiual
      with best fitness."""
+    if bandw:
+        colormap = cm.get_cmap('Greys')
+    else:
+        colormap = cm.get_cmap('viridis')
     fig, axes = plt.subplots(1, 2, figsize=(10, 6))
     weights_exc, weights_inh = individual_to_weights(solution, matrix_exc, matrix_inh)
     weights_exc = np.ma.masked_where(weights_exc == 0, weights_exc)
@@ -349,7 +353,7 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
     ticks = np.linspace(0, nnodes-1, nnodes)
 
     ax = axes[0]
-    ax.imshow(weights_exc, vmin=maxminvals[0], vmax=maxminvals[1])
+    ax.imshow(weights_exc, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
     ax.set(title='Excitatory Coupling Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
            xticks=ticks, yticks=ticks)
     ax.set_xticks(np.arange(-.5, nnodes - 1, 1), minor=True)
@@ -357,7 +361,7 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, maxminvals):
     ax.grid(which='minor', color='k')
 
     ax = axes[1]
-    im = ax.imshow(weights_inh, vmin=maxminvals[0], vmax=maxminvals[1])
+    im = ax.imshow(weights_inh, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
     ax.set(title='Excitatory Coupling Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
            xticks=ticks, yticks=ticks)
     fig.subplots_adjust(right=0.8)
