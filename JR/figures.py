@@ -9,11 +9,11 @@ from singleJR import obtaindynamics, derivatives_signal, unpacking_signal, deriv
 
 plt.style.use('./tfg.mplstyle')
 
-"""
+
 from main import params
 
 # Plot de la sigmoide i dels impulse responses de les poblacions:
-fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+fig, axes = plt.subplots(1, 2, figsize=(7,3))
 t = np.arange(0, 0.2, 0.001)
 he = params['a']*params['A']*t*np.exp(-params['a']*t)
 hi = params['b']*params['B']*t*np.exp(-params['b']*t)
@@ -25,6 +25,7 @@ m = np.arange(-10, 25, 0.001)
 S = 2*params['e0']/(1+np.exp(params['r']*(params['v0'] - m)))
 axes[1].plot(m, S)
 axes[1].set(title='Sigmoid encoding firing rate', xlabel='mV', ylabel='Hz')
+fig.savefig('/home/david/Desktop/hsandsig')
 plt.show()
 """
 # Other plots
@@ -64,3 +65,4 @@ for nn, pbar in enumerate(pbars):
     plt.ylim((-1, 12))
 plt.savefig('/home/david/Desktop/test.png')
 plt.show()
+"""

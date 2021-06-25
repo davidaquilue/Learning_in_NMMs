@@ -271,24 +271,35 @@ def plotanynet(y, t, span, params, bool_sig, signals):
     return fig
 
 
-def plotinputsoutputs(y, t, span, params, bool_sig, signals):
+def plotinputsoutputs(y, t, span, params, bool_sig, signals, idx=0):
     """A function that plots input signals and first and last layers' dynamics.
     First and last layer should have the same nodes. This function will allow to obtain results from more bizarre
     network architectures."""
     nodesfirstlast = params['tuplenetwork'][0]
-    yspan = (np.min(y)-1,np.max(y)+1)
     if span == 'large':
-        xspan = (t[-7001],t[-1])
+        xspan = (t[-7001], t[-1])
+        yspansig = (np.amin(signals[:, -7001:]), 1.05*np.amax(signals[:, -7001:]))
+        yspan = (np.amin(y[[0, 1, 2, 9, 10, 11], -7001:]), 1.05*np.amax(y[[0, 1, 2, 9, 10, 11], -7001:]))
     elif span == 'small':
-        xspan = (t[-3000],t[-1])
+        xspan = (t[-3001], t[-1])
+        yspansig = (np.amin(signals[:, -3001:]), 1.05*np.amax(signals[:, -3001:]))
+        yspan = (np.amin(y[[0, 1, 2, 9, 10, 11], -3001:]), 1.05*np.amax(y[[0, 1, 2, 9, 10, 11], -3001:]))
     
-    fig, axes = plt.subplots(nrows=nodesfirstlast, ncols=3, figsize=(21,10))
+    fig, axes = plt.subplots(nrows=nodesfirstlast, ncols=3, figsize=(8, 6))
+    if idx == 0:
+        fig.suptitle('Network dynamics. $S_{12}$')
+    elif idx == 1:
+        fig.suptitle('Network dynamics. $S_{02}$')
+    else:
+        fig.suptitle('Network dynamics. $S_{01}$')
     # Plot the signals first
     cc = 0
     for ii in range(signals.shape[0]):
         ax = axes[ii, cc]
         ax.plot(t[-10000:], signals[ii, -10000:], 'k')
-        ax.set(xlim=xspan, ylim=(np.amin(signals[ii]), 1.3*np.amax(signals[ii])))
+        ax.set(xlim=xspan, ylim=yspansig)
+        if ii == 0:
+            ax.set_title('$p_s(t)$')
         ax.set_xlabel(r'time (s)')
         ax.set_ylabel(r'$Hz$')
     cc += 1
@@ -301,6 +312,8 @@ def plotinputsoutputs(y, t, span, params, bool_sig, signals):
         ax.set(xlim = xspan, ylim = yspan)
         ax.set_xlabel(r'time (s)')
         ax.set_ylabel(r'$y_1 - y_2$')
+        if ii == 0:
+            ax.set_title('Input layer dynamics')
     cc += 1
 
     # Finally the last layer's
@@ -308,9 +321,11 @@ def plotinputsoutputs(y, t, span, params, bool_sig, signals):
         yy = y[params['Nnodes'] - nodesfirstlast + ii]
         ax = axes[ii, cc]
         ax.plot(t[-10000:], yy[-10000:], 'g')
-        ax.set(xlim = xspan, ylim = yspan)
+        ax.set(xlim=xspan, ylim=yspan)
         ax.set_xlabel(r'time (s)')
         ax.set_ylabel(r'$y_1 - y_2$')
+        if ii == 0:
+            ax.set_title('Output layer dynamics')
     
     plt.tight_layout()
     return fig
@@ -362,7 +377,7 @@ def plotcouplings3x3V2(solution, matrix_exc, matrix_inh, minmaxvals, bandw=False
 
     ax = axes[1]
     im = ax.imshow(weights_inh, vmin=minmaxvals[0], vmax=minmaxvals[1], cmap=colormap)
-    ax.set(title='Excitatory Coupling Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
+    ax.set(title='Inhibitroy Coupling Coefficients', xlabel='Pre-Synaptic Node', ylabel='Post-Synaptic Node',
            xticks=ticks, yticks=ticks)
     fig.subplots_adjust(right=0.8)
     ax.set_xticks(np.arange(-.5, nnodes - 1, 1), minor=True)
@@ -405,7 +420,7 @@ def plot_genfit(num_generations, maxfits, avgfits, best_indivs_gen, extinction_g
 
 def plot_bestind_normevol(bestsols, num_generations, params):
     """Returns the evolution of the norm of the best individual in each generation."""
-    fig, ax = plt.subplots(1,1)
+    fig, ax = plt.subplots(1, 1, figsize=(6, 3))
     len_exc = np.count_nonzero(params['matrix_exc'])
     gens = np.arange(0, num_generations)
     norms_exc = np.array([np.sqrt(np.sum(weight[0:len_exc]**2)) for weight in bestsols])
@@ -480,11 +495,22 @@ def plot_corrs(y, idx, params, newfolder):
 
     fig, ax = plt.subplots(1, 1)
     im = ax.imshow(corr_array, vmin=0, vmax=1)
+
     ticks = np.linspace(0, nnodes-1, nnodes)
     fig.colorbar(im)
     if len(pair) == 2:
         ax.set(xticks=ticks, xticklabels=tickslab, yticks=ticks, yticklabels=tickslab,
                title='Cross-correlations between nodes. $S_{%i%i}$' % pair)
+        """
+        rectins = plt.Rectangle((0 - .5, 0 - .5), 3, 3, fill=False, color='r', linewidth=2)
+        ax.add_patch(rectins)
+        rect1 = plt.Rectangle((3 - .5, 3 - .5), 3, 3, fill=False, color='r', linewidth=2)
+        ax.add_patch(rect1)
+        rect2 = plt.Rectangle((6 - .5, 6 - .5), 3, 3, fill=False, color='r', linewidth=2)
+        ax.add_patch(rect2)
+        rectouts = plt.Rectangle((9 - .5, 9 - .5), 3, 3, fill=False, color='r', linewidth=2)
+        ax.add_patch(rectouts)
+        """
         fig.savefig(newfolder + '/corrs' + str(idx) + '.png')
 
     elif len(pair) == 1:

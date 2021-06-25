@@ -12,8 +12,10 @@ lines.linewidth : 1.5
 text.usetex : True
 font.family: Palatino
 legend.loc : best
+legend.framealpha : 0.95
+legend.edgecolor : 0.55
 
 figure.figsize : 6, 5
-
+figure.titlesize: 20
 savefig.dpi : 300
 savefig.bbox : tight

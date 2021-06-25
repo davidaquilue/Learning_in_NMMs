@@ -12,7 +12,7 @@ from signals import build_dataset, build_p_inputs
 from filefuns import check_create_results_folder, get_num
 from plotfuns import plot_inputs, plotcouplings, plot_genfit, plot_bestind_normevol, plot_corrs, plot_363, plotcouplings3x3V2
 import os, sys
-
+import networkx
 
 # The get_num function outputs a print that I don't want to show. With this class and the following line we block it.
 class HiddenPrints:
@@ -143,38 +143,35 @@ if __name__ == '__main__':
     params['t'] = np.linspace(params['tspan'][0], params['tspan'][1], int((params['tspan'][1] - params['tspan'][0])/params['tstep']))
     params['individual'] = solution
     if typical_recover:
-        if new:
-            check = os.path.isfile(newfolder + '/inputs_0.png')
-            if check:
-                print('Typical recover already performed on this results. If want to repeat please delete inputs_0.png\n')
-            else:
-                params['test_dataset'] = build_dataset(int(2*params['n']),
-                                                    params['tuplenetwork'][0],
-                                                    params['pairs'], params['t'], offset=params['offset'],
-                                                    shift=params['shift'])
-
-                if new:
-                    # Plot the maximum fitnesses and average fitnesses of each generation
-                    fig_genfit = plot_genfit(params['num_generations'], maxfits, avgfits, best_indivs_gen, ext_gens, v=2)
-                    fig_genfit.savefig(newfolder + "/fitness.jpg")
-
-                # Show the coupling matrices corresponding to the best individual of the evolution
-                fig_couplings = plotcouplings(solution, params['matrix_exc'], params['matrix_inh'],
-                                            (params['minvalue'], params['maxvalue']), params, True)
-                fig_couplings.savefig(newfolder + "/bestweights.jpg")
-
-                # Plot the evolution of the norm of the best solution
-                fig_normevol = plot_bestind_normevol(bestsols, bestsols.shape[0], params)
-                fig_normevol.savefig(newfolder + "/normevol.jpg")
-
-                # Finally print the tests results and plot some of the dynamics
-                params['signals'] = params['test_dataset'][0][0]
-                y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
-                modidx = int(params['tspan'][-1] - 10) * 1000
-                plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
-                test_solution(params, newfolder, whatplot='net')
+        check = os.path.isfile(newfolder + '/inputs_0.png')
+        if check:
+            print('Typical recover already performed on this results. If want to repeat please delete inputs_0.png\n')
         else:
-            print('Typical recovery cannot be performed.')
+            params['test_dataset'] = build_dataset(int(2*params['n']),
+                                                params['tuplenetwork'][0],
+                                                params['pairs'], params['t'], offset=params['offset'],
+                                                shift=params['shift'])
+
+            if new:
+                # Plot the maximum fitnesses and average fitnesses of each generation
+                fig_genfit = plot_genfit(params['num_generations'], maxfits, avgfits, best_indivs_gen, ext_gens, v=2)
+                fig_genfit.savefig(newfolder + "/fitness.jpg")
+
+            # Show the coupling matrices corresponding to the best individual of the evolution
+            fig_couplings = plotcouplings(solution, params['matrix_exc'], params['matrix_inh'],
+                                        (params['minvalue'], params['maxvalue']), params, True)
+            fig_couplings.savefig(newfolder + "/bestweights.jpg")
+
+            # Plot the evolution of the norm of the best solution
+            fig_normevol = plot_bestind_normevol(bestsols, bestsols.shape[0], params)
+            fig_normevol.savefig(newfolder + "/normevol.jpg")
+
+            # Finally print the tests results and plot some of the dynamics
+            params['signals'] = params['test_dataset'][0][0]
+            y, t = obtaindynamicsNET(params, params['tspan'], params['tstep'], v=3)
+            modidx = int(params['tspan'][-1] - 10) * 1000
+            plot_inputs(y, params['signals'][:, -modidx:], params, t, newfolder)
+            test_solution(params, newfolder, whatplot='inout')
 
     # I want to test some other things aswell, on the results obtained.
 
@@ -238,7 +235,7 @@ if __name__ == '__main__':
         # First we store those solutions whose fitness is over a threshold.
         bb = 0
         for fits, sol in zip(maxfits, bestsols):
-            if np.amin(fits) > 2.5:
+            if np.mean(fits) > 2.5:
                 if bb == 0:
                     bestbests = sol
                     bb += 1
@@ -247,13 +244,30 @@ if __name__ == '__main__':
 
         # bestbests is a matrix where each row is a solution vector.
         mean = np.mean(bestsols, axis=0)
-        var = np.var(bestsols, axis=0)
+        var = np.std(bestsols, axis=0)
         figmean = plotcouplings3x3V2(mean, params['matrix_exc'], params['matrix_inh'],
                                      (np.amin(mean), np.amax(mean)))
+        figmean.suptitle('Mean values of $F^n > 2.5$ individuals:', y=0.85)
         figvar = plotcouplings3x3V2(var, params['matrix_exc'], params['matrix_inh'],
                                      (np.amin(var), np.amax(var)))
+        figvar.suptitle('Standard deviation of $F^n > 2.5$ individuals:', y=0.85)
+
         figmean.savefig(newfolder + '/meanweightsover2_5')
         figvar.savefig(newfolder + '/varweightsover2_5')
+        weights_exc, weights_inh = individual_to_weights(solution, params['matrix_exc'], params['matrix_inh'])
+
+        receivedexc = np.sum(weights_exc, axis=1) # Each element is a sum of received influences
+        receivedinh = np.sum(weights_inh, axis=1)
+        print('Received')
+        print(receivedexc)
+        print(receivedinh)
+
+        sentexc = np.sum(weights_exc, axis=0)  # Each element is a sum of sent influences
+        sentinh = np.sum(weights_inh, axis=0)
+        print('Sent')
+        print(sentexc)
+        print(sentinh)
+        # Li poso també per a fer anàlisis dels més excitats, més inhibits etc.
 
         # Bueno mañana pensare alguna cosilla más pero seguramente no se le pueda sacar mucho más
         # Sin tener en cuenta cosas más complicadas como comparar pesos de diferentes realizaciones

@@ -368,15 +368,16 @@ def test_solution(params, newfolder, whatplot='net', rangeplot='large'):
 
         # Then we obtain a sample plot for each of the correlation pairs.
         if ii == 0:
-            fig0 = pltfun(y, t, rangeplot, params, True, params['signals'])
+            fig0 = pltfun(y, t, rangeplot, params, True, params['signals'], idx=0)
             corrs0 = plot_corrs(y, ii, params, newfolder)
             fig0.savefig(saving)
         elif ii == 1:
-            fig1 = pltfun(y, t, rangeplot, params, True, params['signals'])
+            fig1 = pltfun(y, t, rangeplot, params, True, params['signals'], idx=1)
             corrs1 = plot_corrs(y, ii, params, newfolder)
             fig1.savefig(saving)
         else:
-            fig2 = pltfun(y, t, rangeplot, params, True, params['signals'])
+            fig2 = pltfun(y, t, rangeplot, params, True, params['signals'], idx=2)
+
             corrs2 = plot_corrs(y, ii, params, newfolder)
             fig2.savefig(saving)
     f.close()

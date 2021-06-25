@@ -226,15 +226,15 @@ def derivativesNET_V3(inp, t, paramtup, n):
         z2 = x[4]
         y2 = x[5]
         # original process
-        #pbar = np.random.uniform(120, 240)
+        pbar = np.random.uniform(120, 240)
         # Realistic process
-        pbar = np.random.normal(95, 5)
+        #pbar = np.random.normal(95, 5)
         # Coupled intensities, we obtain them from a function.
         pa, pb = couplingval_V2(inp, weights_exc[nn], weights_inh[nn], C3, e0, r, v0, nn, tuplenetwork, Nnodes)
 
         if nn in forcednodes:
-            #pbar = signals[nn, n] #Original process
-            pbar += signals[nn, n] # More realistic process
+            pbar = signals[nn, n] #Original process
+            #pbar += signals[nn, n] # More realistic process
         # Derivatives of each variable.
         dz0 = A*a*S(y1-y2, e0, r, v0) - 2*a*z0 - a**2*y0
         dy0 = z0
