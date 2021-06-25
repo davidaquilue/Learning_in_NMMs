@@ -170,6 +170,9 @@ def networkmatrix_exc_inh(tuplenetwork, recurrent, v):
           matrix_inh[iin:iend, jin:jend] = 1
         iin = iend
 
+  elif v == 4: # Only excitatory connections. Typical connections.
+      matrix_inh = np.zeros((Nnodes, Nnodes))
+
   return Nnodes, matrix_exc, matrix_inh
 
 @njit(fastmath = True)

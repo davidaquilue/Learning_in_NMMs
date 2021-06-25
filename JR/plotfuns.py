@@ -498,6 +498,7 @@ def plot_corrs(y, idx, params, newfolder):
 
     ticks = np.linspace(0, nnodes-1, nnodes)
     fig.colorbar(im)
+    fig.colorbar(im)
     if len(pair) == 2:
         ax.set(xticks=ticks, xticklabels=tickslab, yticks=ticks, yticklabels=tickslab,
                title='Cross-correlations between nodes. $S_{%i%i}$' % pair)
@@ -595,6 +596,8 @@ def draw_neural_net(ax, left, right, bottom, top, layer_sizes, conn_matrix, maxv
                     color = str(1 - conn_matrix[init_o + o, init_m + m]/maxvalue)
                 else:
                     color = cmap(conn_matrix[init_o + o, init_m + m]/maxvalue)
+                if color == '--':
+                    color = 1
                 if bandw and float(color) > 0.95:
                     continue
                 line = plt.Line2D([n * h_spacing + left, (n + 1) * h_spacing + left],
