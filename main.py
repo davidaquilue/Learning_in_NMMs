@@ -62,12 +62,12 @@ params['test_dataset'] = build_dataset(int(1*params['n']),
 
 ######################### GENETIC ALGORITHM PARAMETER SETUP ###################
 num_generations = 100
-popsize = 25        # Population size
+popsize = 4        # Population size
 mutindprob = 0.2    # Probability that an individual undergoes mutation
 coprob = 0.5        # Crossover probability
 maxgene = 0.2*C    # Maximum coupling value of a connection
 mingene = 0         # Minimum coupling value of a connection
-par_processes = 25  # How many cores will be used in order to parallelize the GA.
+par_processes = 4  # How many cores will be used in order to parallelize the GA.
 L = 35              # After how many non-improving generations exctinction occurs
 
 params['maxvalue'] = maxgene
@@ -109,7 +109,7 @@ if __name__ == '__main__':
         fig_normevol.savefig(newfolder + "/normevol.jpg")
 
         np.save(newfolder + '/best_ind', solution)  # Save the best individual
-        plt.show()
+        #plt.show()
 
         # Finally print the tests results and plot some of the dynamics
         params['individual'] = solution

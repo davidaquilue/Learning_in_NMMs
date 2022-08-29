@@ -316,7 +316,7 @@ def main_DEAP_extinction(num_generations, popsize, mutindprob, coprob,
     return maxfits, avgfits, bestsols, extinction_generations
 
 
-def test_solution(params, newfolder, whatplot='net', rangeplot='large'):
+def test_solution(params, newfolder, whatplot='inout', rangeplot='large'):
     """!!!IT WORKS FOR THE 363 NETWORK ONLY RIGHT NOW!!!
     This function obtains the dynamics from the testing set and plots
     some of the dynamics. It also prints and saves the correlations between
